@@ -2,11 +2,14 @@ package ipc
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net"
 	"os"
+
+	"github.com/innomon/keet-adk-gateway/pkg/dht"
 )
 
 type SocketListener struct {
@@ -65,7 +68,36 @@ func HandleClient(ctx context.Context, conn net.Conn) {
 
 			slog.Debug("ADK command intercept", "payload", req)
 
+			cmd, _ := req["command"].(string)
 			resp := map[string]interface{}{"status": "acknowledged", "origin": "keet_peer"}
+
+			switch cmd {
+			case "join_swarm":
+				topic, _ := req["topic"].(string)
+				resolvedKey, err := dht.ResolveTopicKey(topic)
+				if err != nil {
+					resp = map[string]interface{}{
+						"status":  "error",
+						"command": "join_swarm",
+						"error":   fmt.Sprintf("invalid topic: %v", err),
+					}
+				} else {
+					resp = map[string]interface{}{
+						"status":             "success",
+						"command":            "join_swarm",
+						"topic":              topic,
+						"resolved_topic_key": hex.EncodeToString(resolvedKey[:]),
+					}
+				}
+			case "leave_swarm":
+				topic, _ := req["topic"].(string)
+				resp = map[string]interface{}{
+					"status":  "success",
+					"command": "leave_swarm",
+					"topic":   topic,
+				}
+			}
+
 			if err := encoder.Encode(&resp); err != nil {
 				slog.Error("Failed response serialization upstream to client", "err", err)
 				return
