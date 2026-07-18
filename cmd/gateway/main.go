@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/innomon/keet-adk-gateway/pkg/config"
+	"github.com/innomon/keet-adk-gateway/pkg/dht"
 	"github.com/innomon/keet-adk-gateway/pkg/ipc"
 	"github.com/innomon/keet-adk-gateway/pkg/logger"
 )
@@ -50,6 +51,14 @@ func main() {
 	}
 	defer listener.Close()
 
+	// Initialize DHT and Swarm Registry
+	dhtNode, err := dht.NewDHTNode(nil)
+	if err != nil {
+		cl.Errorf("Failed to initialize DHT Node: %v", err)
+		os.Exit(1)
+	}
+	swarmRegistry := dht.NewSwarmRegistry()
+
 	cl.Infof("ADK Communication Socket Ready at path: %s", cfg.SocketPath)
 
 	go func() {
@@ -71,6 +80,6 @@ func main() {
 				continue
 			}
 		}
-		go ipc.HandleClient(ctx, conn)
+		go ipc.HandleClient(ctx, conn, dhtNode, swarmRegistry)
 	}
 }
