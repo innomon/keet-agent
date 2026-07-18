@@ -32,6 +32,8 @@ type Data struct {
 	Signature []byte
 }
 
+const MaxMessageSize = 10 * 1024 * 1024 // 10MB limit
+
 // Helpers for encoding/decoding
 func writeString(w io.Writer, s string) error {
 	b := []byte(s)
@@ -46,6 +48,9 @@ func readString(r io.Reader) (string, error) {
 	var length uint32
 	if err := binary.Read(r, binary.BigEndian, &length); err != nil {
 		return "", err
+	}
+	if length > MaxMessageSize {
+		return "", errors.New("message string field exceeds safety limit")
 	}
 	buf := make([]byte, length)
 	if _, err := io.ReadFull(r, buf); err != nil {
@@ -66,6 +71,9 @@ func readBytes(r io.Reader) ([]byte, error) {
 	var length uint32
 	if err := binary.Read(r, binary.BigEndian, &length); err != nil {
 		return nil, err
+	}
+	if length > MaxMessageSize {
+		return nil, errors.New("message bytes field exceeds safety limit")
 	}
 	buf := make([]byte, length)
 	if _, err := io.ReadFull(r, buf); err != nil {
