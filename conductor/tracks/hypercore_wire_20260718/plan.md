@@ -26,7 +26,7 @@ This plan details the steps to implement Hypercore message encoding, flat-file s
     - [x] Verify cryptographic verification tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Merkle Tree and Cryptographic Verification' (Protocol in workflow.md)
 
-## Phase 3: IPC Socket Commands and Integration
+## Phase 3: IPC Socket Commands and Integration [checkpoint: 1741507]
 
 - [x] Task: IPC socket command extensions (TDD) (522c2ce)
     - [x] Write unit tests for `get_block` and `append_block` JSON-RPC frames over Unix socket
@@ -35,4 +35,4 @@ This plan details the steps to implement Hypercore message encoding, flat-file s
 - [x] Task: Gateway Integration and Verify Execution (91ad662)
     - [x] Integrate Hypercore log storage and verification layer into `cmd/gateway/main.go`
     - [x] Verify gateway starts, processes get/append commands, and logs block operations successfully
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: IPC Socket Commands and Integration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: IPC Socket Commands and Integration' (Protocol in workflow.md)
