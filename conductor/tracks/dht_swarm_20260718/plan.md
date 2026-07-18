@@ -18,7 +18,7 @@ This plan details the steps to implement HyperDHT bootstrapping, topic hashing, 
     - [x] Verify routing table and discovery tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 1: HyperDHT Node and Bootstrapping' (Protocol in workflow.md)
 
-## Phase 2: Noise Handshake and Channel Security
+## Phase 2: Noise Handshake and Channel Security [checkpoint: 8a4e179]
 
 - [x] Task: Noise Protocol Handshake (TDD) (94fb78d)
     - [x] Write tests for secure handshakes between mock peers
@@ -28,7 +28,7 @@ This plan details the steps to implement HyperDHT bootstrapping, topic hashing, 
     - [x] Write tests for thread-safe swarm registry updates
     - [x] Implement in-memory registry (`sync.Map`) for active swarms and connections in `pkg/dht/registry.go`
     - [x] Verify registry tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Noise Handshake and Channel Security' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Noise Handshake and Channel Security' (Protocol in workflow.md)
 
 ## Phase 3: IPC Command API Integration
 
