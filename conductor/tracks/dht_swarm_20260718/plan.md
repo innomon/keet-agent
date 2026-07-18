@@ -8,10 +8,10 @@ This plan details the steps to implement HyperDHT bootstrapping, topic hashing, 
     - [x] Write tests for configuration loading and custom bootstrap nodes
     - [x] Define DHT node structure and custom bootstrapper in `pkg/dht/dht.go`
     - [x] Verify configuration tests pass
-- [ ] Task: Topic Hashing and Swarm Resolution (TDD)
-    - [ ] Write tests for Blake2b topic hashing (validating string topics vs 32-byte raw topics)
-    - [ ] Implement Blake2b topic hashing in `pkg/dht/topic.go`
-    - [ ] Verify hashing tests pass
+- [x] Task: Topic Hashing and Swarm Resolution (TDD) (c5af8a5)
+    - [x] Write tests for Blake2b topic hashing (validating string topics vs 32-byte raw topics)
+    - [x] Implement Blake2b topic hashing in `pkg/dht/topic.go`
+    - [x] Verify hashing tests pass
 - [ ] Task: Kademlia Routing and Node Discovery (TDD)
     - [ ] Write tests for routing table updates and lookup functions
     - [ ] Implement local Kademlia routing table and bootstrap node discovery protocol
