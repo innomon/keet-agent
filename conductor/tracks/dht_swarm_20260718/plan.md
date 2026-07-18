@@ -30,7 +30,7 @@ This plan details the steps to implement HyperDHT bootstrapping, topic hashing, 
     - [x] Verify registry tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Noise Handshake and Channel Security' (Protocol in workflow.md)
 
-## Phase 3: IPC Command API Integration
+## Phase 3: IPC Command API Integration [checkpoint: ee83d20]
 
 - [x] Task: IPC command endpoint tests (TDD) (bdd2691)
     - [x] Write tests for `join_swarm` and `leave_swarm` JSON-RPC socket frames
@@ -39,4 +39,4 @@ This plan details the steps to implement HyperDHT bootstrapping, topic hashing, 
 - [x] Task: Integration and Gateway Run Verification (e76ad80)
     - [x] Integrate DHT nodes and swarm registry into `cmd/gateway/main.go`
     - [x] Verify that running the gateway, sending socket join command, and swarming on a test topic discovery works and logs properly
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: IPC Command API Integration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: IPC Command API Integration' (Protocol in workflow.md)
