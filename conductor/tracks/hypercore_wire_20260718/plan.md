@@ -20,10 +20,10 @@ This plan details the steps to implement Hypercore message encoding, flat-file s
     - [x] Write unit tests for leaf and parent node calculations
     - [x] Implement Merkle tree leaf/parent hashing using Blake2b in `pkg/hypercore/merkle.go`
     - [x] Verify Merkle hashing tests pass
-- [ ] Task: Ed25519 Signature Verification (TDD)
-    - [ ] Write unit tests validating valid/invalid signatures on Merkle tree root hashes
-    - [ ] Implement Ed25519 signature checks using public keys in `pkg/hypercore/crypto.go`
-    - [ ] Verify cryptographic verification tests pass
+- [x] Task: Ed25519 Signature Verification (TDD) (8175d86)
+    - [x] Write unit tests validating valid/invalid signatures on Merkle tree root hashes
+    - [x] Implement Ed25519 signature checks using public keys in `pkg/hypercore/crypto.go`
+    - [x] Verify cryptographic verification tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Merkle Tree and Cryptographic Verification' (Protocol in workflow.md)
 
 ## Phase 3: IPC Socket Commands and Integration
