@@ -28,10 +28,10 @@ This plan details the steps to implement Hypercore message encoding, flat-file s
 
 ## Phase 3: IPC Socket Commands and Integration
 
-- [ ] Task: IPC socket command extensions (TDD)
-    - [ ] Write unit tests for `get_block` and `append_block` JSON-RPC frames over Unix socket
-    - [ ] Extend socket client worker loop in `pkg/ipc/socket.go` to support `get_block` and `append_block`
-    - [ ] Verify socket command tests pass
+- [x] Task: IPC socket command extensions (TDD) (522c2ce)
+    - [x] Write unit tests for `get_block` and `append_block` JSON-RPC frames over Unix socket
+    - [x] Extend socket client worker loop in `pkg/ipc/socket.go` to support `get_block` and `append_block`
+    - [x] Verify socket command tests pass
 - [ ] Task: Gateway Integration and Verify Execution
     - [ ] Integrate Hypercore log storage and verification layer into `cmd/gateway/main.go`
     - [ ] Verify gateway starts, processes get/append commands, and logs block operations successfully
