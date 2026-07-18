@@ -9,10 +9,10 @@ This plan details the steps to implement DB configuration, connection pooling, h
     - [x] Add `DBHost`, `DBPort`, `DBUser`, `DBPassword`, `DBName`, and `DBSSLMode` variables to `pkg/config/config.go`
     - [x] Implement database pool connection in `pkg/db/postgres.go` using `github.com/jackc/pgx/v5/pgxpool`
     - [x] Verify configuration and pool tests pass
-- [ ] Task: Schema Loader and SQL Migrations (TDD)
-    - [ ] Write unit tests for running database schema migrations sequentially
-    - [ ] Implement a raw SQL schema migration loader in `pkg/db/migrations.go` executing tables creation query on startup
-    - [ ] Verify migration loader tests pass
+- [x] Task: Schema Loader and SQL Migrations (TDD) (e731428)
+    - [x] Write unit tests for running database schema migrations sequentially
+    - [x] Implement a raw SQL schema migration loader in `pkg/db/migrations.go` executing tables creation query on startup
+    - [x] Verify migration loader tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: DB Configuration, Connection Pools, and Migrations' (Protocol in workflow.md)
 
 ## Phase 2: Swarm and Block Repositories
