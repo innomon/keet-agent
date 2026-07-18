@@ -17,10 +17,10 @@ This plan details the steps to implement DB configuration, connection pooling, h
 
 ## Phase 2: Swarm and Block Repositories
 
-- [ ] Task: Swarms Table Repository (TDD)
-    - [ ] Write unit tests for adding and removing swarms in the database
-    - [ ] Implement `SwarmRepository` in `pkg/db/swarm_repo.go` handling database inserts and deletions
-    - [ ] Verify swarm repository tests pass
+- [x] Task: Swarms Table Repository (TDD) (ce21902)
+    - [x] Write unit tests for adding and removing swarms in the database
+    - [x] Implement `SwarmRepository` in `pkg/db/swarm_repo.go` handling database inserts and deletions
+    - [x] Verify swarm repository tests pass
 - [ ] Task: Replicated Blocks Repository (TDD)
     - [ ] Write unit tests for inserting and retrieving Hypercore log blocks from the database
     - [ ] Implement `BlockRepository` in `pkg/db/block_repo.go` handling database inserts and queries
