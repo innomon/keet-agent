@@ -1,7 +1,10 @@
 package ipc
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net"
 	"os"
 )
@@ -40,4 +43,33 @@ func (s *SocketListener) Close() error {
 	// Clean up socket file on close
 	_ = os.Remove(s.path)
 	return err
+}
+
+func HandleClient(ctx context.Context, conn net.Conn) {
+	defer conn.Close()
+	slog.Info("New ADK Client pipeline bound successfully", "remote", conn.RemoteAddr())
+
+	decoder := json.NewDecoder(conn)
+	encoder := json.NewEncoder(conn)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			var req map[string]interface{}
+			if err := decoder.Decode(&req); err != nil {
+				slog.Warn("Disconnected or malformed ADK frames detected", "err", err)
+				return
+			}
+
+			slog.Debug("ADK command intercept", "payload", req)
+
+			resp := map[string]interface{}{"status": "acknowledged", "origin": "keet_peer"}
+			if err := encoder.Encode(&resp); err != nil {
+				slog.Error("Failed response serialization upstream to client", "err", err)
+				return
+			}
+		}
+	}
 }
