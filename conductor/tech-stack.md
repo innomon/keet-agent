@@ -11,7 +11,7 @@ This document outlines the selected technology stack and system components for t
 ## 2. Peer-to-Peer Networking
 - **DHT Discovery**: Custom Kademlia-based HyperDHT protocol handler in pure Go.
 - **Data Replication**: Hypercore Protocol (v10) implementation in Go for parsing append-only cryptographic logs.
-- **Cryptography**: Standard Go libraries (`crypto/ed25519`, `golang.org/x/crypto/noise` or standard Noise handshakes, `golang.org/x/crypto/blake2b`).
+- **Cryptography**: Go cryptography libraries (`crypto/ed25519`, `github.com/flynn/noise`, `filippo.io/edwards25519`, `golang.org/x/crypto/blake2b`).
 
 ## 3. Inter-Process Communication (IPC)
 - **Local Transport**: Unix Domain Sockets (`net.Listen("unix", "/tmp/keet-adk.sock")`).
