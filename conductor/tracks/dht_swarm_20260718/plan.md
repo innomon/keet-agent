@@ -20,10 +20,10 @@ This plan details the steps to implement HyperDHT bootstrapping, topic hashing, 
 
 ## Phase 2: Noise Handshake and Channel Security
 
-- [ ] Task: Noise Protocol Handshake (TDD)
-    - [ ] Write tests for secure handshakes between mock peers
-    - [ ] Implement Noise handshakes (`Noise_XK_25519_ChaChaPoly_BLAKE2b`) using Ed25519 keys in `pkg/crypto/noise.go`
-    - [ ] Verify Noise handshake tests pass
+- [x] Task: Noise Protocol Handshake (TDD) (94fb78d)
+    - [x] Write tests for secure handshakes between mock peers
+    - [x] Implement Noise handshakes (`Noise_XK_25519_ChaChaPoly_BLAKE2b`) using Ed25519 keys in `pkg/crypto/noise.go`
+    - [x] Verify Noise handshake tests pass
 - [ ] Task: In-Memory Swarm Registry (TDD)
     - [ ] Write tests for thread-safe swarm registry updates
     - [ ] Implement in-memory registry (`sync.Map`) for active swarms and connections in `pkg/dht/registry.go`
