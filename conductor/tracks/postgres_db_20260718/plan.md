@@ -15,7 +15,7 @@ This plan details the steps to implement DB configuration, connection pooling, h
     - [x] Verify migration loader tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 1: DB Configuration, Connection Pools, and Migrations' (Protocol in workflow.md)
 
-## Phase 2: Swarm and Block Repositories
+## Phase 2: Swarm and Block Repositories [checkpoint: f443a75]
 
 - [x] Task: Swarms Table Repository (TDD) (ce21902)
     - [x] Write unit tests for adding and removing swarms in the database
@@ -25,7 +25,7 @@ This plan details the steps to implement DB configuration, connection pooling, h
     - [x] Write unit tests for inserting and retrieving Hypercore log blocks from the database
     - [x] Implement `BlockRepository` in `pkg/db/block_repo.go` handling database inserts and queries
     - [x] Verify block repository tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Swarm and Block Repositories' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Swarm and Block Repositories' (Protocol in workflow.md)
 
 ## Phase 3: Integration and Gateway Run Verification
 
