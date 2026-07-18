@@ -8,10 +8,10 @@ This plan details the steps to implement Hypercore message encoding, flat-file s
     - [x] Write unit tests for protocol message serialization and deserialization
     - [x] Implement encoding/decoding for `handshake`, `want`, `have`, `request`, and `data` messages in `pkg/hypercore/wire.go`
     - [x] Verify serialization tests pass
-- [ ] Task: Flat-File Log Block Storage (TDD)
-    - [ ] Write unit tests for appends and offset retrievals on flat file storage
-    - [ ] Implement flat-file block driver with index offsets in `pkg/hypercore/storage.go`
-    - [ ] Verify storage driver tests pass
+- [x] Task: Flat-File Log Block Storage (TDD) (9fa4793)
+    - [x] Write unit tests for appends and offset retrievals on flat file storage
+    - [x] Implement flat-file block driver with index offsets in `pkg/hypercore/storage.go`
+    - [x] Verify storage driver tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Binary Frame Serialization and Flat File Storage' (Protocol in workflow.md)
 
 ## Phase 2: Merkle Tree and Cryptographic Verification
