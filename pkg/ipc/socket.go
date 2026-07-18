@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/innomon/keet-adk-gateway/pkg/db"
 	"github.com/innomon/keet-adk-gateway/pkg/dht"
 	"github.com/innomon/keet-adk-gateway/pkg/hypercore"
 )
@@ -50,7 +51,7 @@ func (s *SocketListener) Close() error {
 	return err
 }
 
-func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dht.SwarmRegistry, store *hypercore.Storage) {
+func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dht.SwarmRegistry, store *hypercore.Storage, swarmRepo *db.SwarmRepository, blockRepo *db.BlockRepository) {
 	defer conn.Close()
 	slog.Info("New ADK Client pipeline bound successfully", "remote", conn.RemoteAddr())
 
@@ -88,6 +89,11 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 					if reg != nil {
 						reg.RegisterPeer(resolvedKey, peerKey)
 					}
+					if swarmRepo != nil {
+						if err := swarmRepo.RegisterSwarm(ctx, hex.EncodeToString(resolvedKey[:]), topic); err != nil {
+							slog.Error("Failed to register swarm in db", "err", err)
+						}
+					}
 					slog.Info("Successfully joined DHT swarm topic", "topic", topic, "key", hex.EncodeToString(resolvedKey[:]))
 
 					resp = map[string]interface{}{
@@ -100,8 +106,15 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 			case "leave_swarm":
 				topic, _ := req["topic"].(string)
 				resolvedKey, err := dht.ResolveTopicKey(topic)
-				if err == nil && reg != nil {
-					reg.ClearSwarm(resolvedKey)
+				if err == nil {
+					if reg != nil {
+						reg.ClearSwarm(resolvedKey)
+					}
+					if swarmRepo != nil {
+						if err := swarmRepo.UnregisterSwarm(ctx, hex.EncodeToString(resolvedKey[:])); err != nil {
+							slog.Error("Failed to unregister swarm in db", "err", err)
+						}
+					}
 				}
 				slog.Info("Successfully left DHT swarm topic", "topic", topic)
 				resp = map[string]interface{}{
@@ -134,6 +147,19 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 								"error":   fmt.Sprintf("failed to append: %v", err),
 							}
 						} else {
+							if blockRepo != nil {
+								feedKey, _ := req["feed_key"].(string)
+								if feedKey == "" {
+									feedKey = "default_feed"
+								}
+								var sig []byte
+								if sigStr, ok := req["signature"].(string); ok {
+									sig, _ = base64.StdEncoding.DecodeString(sigStr)
+								}
+								if err := blockRepo.PutBlock(ctx, feedKey, currIndex, decoded, sig); err != nil {
+									slog.Error("Failed to cache block in db", "err", err)
+								}
+							}
 							resp = map[string]interface{}{
 								"status":  "success",
 								"command": "append_block",
@@ -162,6 +188,21 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 					}
 
 					block, err := store.Get(index)
+					if err != nil {
+						// Attempt to fallback to database block cache
+						if blockRepo != nil {
+							feedKey, _ := req["feed_key"].(string)
+							if feedKey == "" {
+								feedKey = "default_feed"
+							}
+							val, _, dbErr := blockRepo.GetBlock(ctx, feedKey, index)
+							if dbErr == nil {
+								block = val
+								err = nil
+							}
+						}
+					}
+
 					if err != nil {
 						resp = map[string]interface{}{
 							"status":  "error",

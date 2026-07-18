@@ -83,7 +83,7 @@ func TestSocket_ConcurrentClients(t *testing.T) {
 					return
 				}
 			}
-			go HandleClient(ctx, conn, nil, nil, nil)
+			go HandleClient(ctx, conn, nil, nil, nil, nil, nil)
 		}
 	}()
 
@@ -147,7 +147,7 @@ func TestSocket_SwarmCommands(t *testing.T) {
 			if err != nil {
 				return
 			}
-			go HandleClient(ctx, conn, nil, nil, nil)
+			go HandleClient(ctx, conn, nil, nil, nil, nil, nil)
 		}
 	}()
 
@@ -224,7 +224,7 @@ func TestSocket_HypercoreCommands(t *testing.T) {
 			if err != nil {
 				return
 			}
-			go HandleClient(ctx, conn, nil, nil, storage)
+			go HandleClient(ctx, conn, nil, nil, storage, nil, nil)
 		}
 	}()
 

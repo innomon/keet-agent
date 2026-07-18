@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/innomon/keet-adk-gateway/pkg/config"
+	"github.com/innomon/keet-adk-gateway/pkg/db"
 	"github.com/innomon/keet-adk-gateway/pkg/dht"
 	"github.com/innomon/keet-adk-gateway/pkg/hypercore"
 	"github.com/innomon/keet-adk-gateway/pkg/ipc"
@@ -60,6 +61,24 @@ func main() {
 	}
 	swarmRegistry := dht.NewSwarmRegistry()
 
+	// Initialize PostgreSQL database connection pool
+	connPool, err := db.Connect(ctx, cfg)
+	if err != nil {
+		cl.Errorf("Failed to connect to PostgreSQL database: %v", err)
+		os.Exit(1)
+	}
+	defer connPool.Close()
+
+	// Run database migrations
+	if err := db.RunMigrations(ctx, connPool); err != nil {
+		cl.Errorf("Failed to run database migrations: %v", err)
+		os.Exit(1)
+	}
+	cl.Infof("Successfully connected to PostgreSQL database and executed migrations")
+
+	swarmRepo := db.NewSwarmRepository(connPool)
+	blockRepo := db.NewBlockRepository(connPool)
+
 	// Initialize Hypercore flat-file Storage
 	hypercoreStorage, err := hypercore.NewStorage(cfg.StorageDir)
 	if err != nil {
@@ -89,6 +108,6 @@ func main() {
 				continue
 			}
 		}
-		go ipc.HandleClient(ctx, conn, dhtNode, swarmRegistry, hypercoreStorage)
+		go ipc.HandleClient(ctx, conn, dhtNode, swarmRegistry, hypercoreStorage, swarmRepo, blockRepo)
 	}
 }
