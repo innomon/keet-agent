@@ -4,10 +4,10 @@ This plan details the steps to implement HyperDHT bootstrapping, topic hashing, 
 
 ## Phase 1: HyperDHT Node and Bootstrapping
 
-- [ ] Task: DHT Configuration and Structs (TDD)
-    - [ ] Write tests for configuration loading and custom bootstrap nodes
-    - [ ] Define DHT node structure and custom bootstrapper in `pkg/dht/dht.go`
-    - [ ] Verify configuration tests pass
+- [x] Task: DHT Configuration and Structs (TDD) (33a6e50)
+    - [x] Write tests for configuration loading and custom bootstrap nodes
+    - [x] Define DHT node structure and custom bootstrapper in `pkg/dht/dht.go`
+    - [x] Verify configuration tests pass
 - [ ] Task: Topic Hashing and Swarm Resolution (TDD)
     - [ ] Write tests for Blake2b topic hashing (validating string topics vs 32-byte raw topics)
     - [ ] Implement Blake2b topic hashing in `pkg/dht/topic.go`
