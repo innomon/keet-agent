@@ -13,11 +13,11 @@ This plan outlines the steps to initialize the Go module, configure the structur
     - [x] Write tests for LogRotator (file creation, size-based rotation, backup pruning)
     - [x] Implement LogRotator in `pkg/logger/rotator.go` using only standard library
     - [x] Verify LogRotator tests pass
-- [ ] Task: Structured Multiplexed Logger (TDD)
-    - [ ] Write tests for MultiHandler and Logger Init
-    - [ ] Implement MultiHandler and Logger configuration in `pkg/logger/logger.go`
-    - [ ] Implement caller PC tracing in custom logging wrapper to preserve source code locations
-    - [ ] Verify logger and wrapper tests pass
+- [x] Task: Structured Multiplexed Logger (TDD) (ebc1ba9)
+    - [x] Write tests for MultiHandler and Logger Init
+    - [x] Implement MultiHandler and Logger configuration in `pkg/logger/logger.go`
+    - [x] Implement caller PC tracing in custom logging wrapper to preserve source code locations
+    - [x] Verify logger and wrapper tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Project Scaffolding and Structured Logging' (Protocol in workflow.md)
 
 ## Phase 2: IPC Unix Domain Socket
