@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"sync"
 
 	"filippo.io/edwards25519"
 	"github.com/flynn/noise"
@@ -17,6 +18,8 @@ type SecureConn struct {
 	csSend  *noise.CipherState
 	csRecv  *noise.CipherState
 	readBuf []byte
+	writeMu sync.Mutex
+	readMu  sync.Mutex
 }
 
 func NewSecureConnection(conn net.Conn, localPriv ed25519.PrivateKey, remotePub ed25519.PublicKey, initiator bool) (net.Conn, error) {
@@ -126,6 +129,9 @@ func NewSecureConnection(conn net.Conn, localPriv ed25519.PrivateKey, remotePub 
 }
 
 func (s *SecureConn) Write(p []byte) (int, error) {
+	s.writeMu.Lock()
+	defer s.writeMu.Unlock()
+
 	encrypted, err := s.csSend.Encrypt(nil, nil, p)
 	if err != nil {
 		return 0, err
@@ -137,6 +143,9 @@ func (s *SecureConn) Write(p []byte) (int, error) {
 }
 
 func (s *SecureConn) Read(p []byte) (int, error) {
+	s.readMu.Lock()
+	defer s.readMu.Unlock()
+
 	if len(s.readBuf) > 0 {
 		n := copy(p, s.readBuf)
 		s.readBuf = s.readBuf[n:]

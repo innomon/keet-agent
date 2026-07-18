@@ -81,7 +81,7 @@ func TestSocket_ConcurrentClients(t *testing.T) {
 					return
 				}
 			}
-			go HandleClient(ctx, conn) // We will implement HandleClient
+			go HandleClient(ctx, conn, nil, nil) // We will implement HandleClient
 		}
 	}()
 
@@ -145,7 +145,7 @@ func TestSocket_SwarmCommands(t *testing.T) {
 			if err != nil {
 				return
 			}
-			go HandleClient(ctx, conn)
+			go HandleClient(ctx, conn, nil, nil)
 		}
 	}()
 

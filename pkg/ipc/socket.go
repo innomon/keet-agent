@@ -48,7 +48,7 @@ func (s *SocketListener) Close() error {
 	return err
 }
 
-func HandleClient(ctx context.Context, conn net.Conn) {
+func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dht.SwarmRegistry) {
 	defer conn.Close()
 	slog.Info("New ADK Client pipeline bound successfully", "remote", conn.RemoteAddr())
 
@@ -74,6 +74,7 @@ func HandleClient(ctx context.Context, conn net.Conn) {
 			switch cmd {
 			case "join_swarm":
 				topic, _ := req["topic"].(string)
+				peerKey, _ := req["peer_key"].(string)
 				resolvedKey, err := dht.ResolveTopicKey(topic)
 				if err != nil {
 					resp = map[string]interface{}{
@@ -82,6 +83,11 @@ func HandleClient(ctx context.Context, conn net.Conn) {
 						"error":   fmt.Sprintf("invalid topic: %v", err),
 					}
 				} else {
+					if reg != nil {
+						reg.RegisterPeer(resolvedKey, peerKey)
+					}
+					slog.Info("Successfully joined DHT swarm topic", "topic", topic, "key", hex.EncodeToString(resolvedKey[:]))
+
 					resp = map[string]interface{}{
 						"status":             "success",
 						"command":            "join_swarm",
@@ -91,6 +97,11 @@ func HandleClient(ctx context.Context, conn net.Conn) {
 				}
 			case "leave_swarm":
 				topic, _ := req["topic"].(string)
+				resolvedKey, err := dht.ResolveTopicKey(topic)
+				if err == nil && reg != nil {
+					reg.ClearSwarm(resolvedKey)
+				}
+				slog.Info("Successfully left DHT swarm topic", "topic", topic)
 				resp = map[string]interface{}{
 					"status":  "success",
 					"command": "leave_swarm",
