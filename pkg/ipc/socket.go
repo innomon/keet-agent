@@ -2,6 +2,7 @@ package ipc
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"os"
 
 	"github.com/innomon/keet-adk-gateway/pkg/dht"
+	"github.com/innomon/keet-adk-gateway/pkg/hypercore"
 )
 
 type SocketListener struct {
@@ -48,7 +50,7 @@ func (s *SocketListener) Close() error {
 	return err
 }
 
-func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dht.SwarmRegistry) {
+func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dht.SwarmRegistry, store *hypercore.Storage) {
 	defer conn.Close()
 	slog.Info("New ADK Client pipeline bound successfully", "remote", conn.RemoteAddr())
 
@@ -106,6 +108,73 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 					"status":  "success",
 					"command": "leave_swarm",
 					"topic":   topic,
+				}
+			case "append_block":
+				dataStr, _ := req["data"].(string)
+				if store == nil {
+					resp = map[string]interface{}{
+						"status":  "error",
+						"command": "append_block",
+						"error":   "storage not initialized",
+					}
+				} else {
+					decoded, err := base64.StdEncoding.DecodeString(dataStr)
+					if err != nil {
+						resp = map[string]interface{}{
+							"status":  "error",
+							"command": "append_block",
+							"error":   fmt.Sprintf("invalid base64: %v", err),
+						}
+					} else {
+						currIndex := store.Len()
+						if err := store.Append(decoded); err != nil {
+							resp = map[string]interface{}{
+								"status":  "error",
+								"command": "append_block",
+								"error":   fmt.Sprintf("failed to append: %v", err),
+							}
+						} else {
+							resp = map[string]interface{}{
+								"status":  "success",
+								"command": "append_block",
+								"index":   currIndex,
+							}
+						}
+					}
+				}
+			case "get_block":
+				indexVal, ok := req["index"]
+				if !ok || store == nil {
+					resp = map[string]interface{}{
+						"status":  "error",
+						"command": "get_block",
+						"error":   "invalid request or storage not initialized",
+					}
+				} else {
+					var index uint64
+					switch v := indexVal.(type) {
+					case float64:
+						index = uint64(v)
+					case int:
+						index = uint64(v)
+					case uint64:
+						index = v
+					}
+
+					block, err := store.Get(index)
+					if err != nil {
+						resp = map[string]interface{}{
+							"status":  "error",
+							"command": "get_block",
+							"error":   fmt.Sprintf("failed to get block: %v", err),
+						}
+					} else {
+						resp = map[string]interface{}{
+							"status":  "success",
+							"command": "get_block",
+							"data":    base64.StdEncoding.EncodeToString(block),
+						}
+					}
 				}
 			}
 

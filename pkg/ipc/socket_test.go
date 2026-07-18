@@ -8,6 +8,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/innomon/keet-adk-gateway/pkg/hypercore"
 )
 
 func TestSocketListener(t *testing.T) {
@@ -81,7 +83,7 @@ func TestSocket_ConcurrentClients(t *testing.T) {
 					return
 				}
 			}
-			go HandleClient(ctx, conn, nil, nil) // We will implement HandleClient
+			go HandleClient(ctx, conn, nil, nil, nil)
 		}
 	}()
 
@@ -145,7 +147,7 @@ func TestSocket_SwarmCommands(t *testing.T) {
 			if err != nil {
 				return
 			}
-			go HandleClient(ctx, conn, nil, nil)
+			go HandleClient(ctx, conn, nil, nil, nil)
 		}
 	}()
 
@@ -188,5 +190,87 @@ func TestSocket_SwarmCommands(t *testing.T) {
 	}
 	if respLeave["status"] != "success" || respLeave["command"] != "leave_swarm" {
 		t.Errorf("unexpected leave_swarm response: %v", respLeave)
+	}
+}
+
+func TestSocket_HypercoreCommands(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "hypercore_socket_test_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	storage, err := hypercore.NewStorage(tempDir)
+	if err != nil {
+		t.Fatalf("failed to create storage: %v", err)
+	}
+	defer storage.Close()
+
+	socketPath := "/tmp/keet-adk-hypercore-test.sock"
+	_ = os.Remove(socketPath)
+
+	listener, err := NewSocketListener(socketPath)
+	if err != nil {
+		t.Fatalf("failed to create socket listener: %v", err)
+	}
+	defer listener.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			go HandleClient(ctx, conn, nil, nil, storage)
+		}
+	}()
+
+	conn, err := net.Dial("unix", socketPath)
+	if err != nil {
+		t.Fatalf("failed to dial: %v", err)
+	}
+	defer conn.Close()
+
+	// 1. Test append_block
+	reqAppend := map[string]interface{}{
+		"command": "append_block",
+		"data":    "aGVsbG8gYmxvY2s=", // "hello block" in base64
+	}
+	if err := json.NewEncoder(conn).Encode(&reqAppend); err != nil {
+		t.Fatalf("failed to send append_block: %v", err)
+	}
+
+	var respAppend map[string]interface{}
+	if err := json.NewDecoder(conn).Decode(&respAppend); err != nil {
+		t.Fatalf("failed to read append_block response: %v", err)
+	}
+	if respAppend["status"] != "success" || respAppend["command"] != "append_block" {
+		t.Errorf("unexpected append_block response: %v", respAppend)
+	}
+	if respAppend["index"] != float64(0) {
+		t.Errorf("expected index 0, got %v", respAppend["index"])
+	}
+
+	// 2. Test get_block
+	reqGet := map[string]interface{}{
+		"command": "get_block",
+		"index":   0,
+	}
+	if err := json.NewEncoder(conn).Encode(&reqGet); err != nil {
+		t.Fatalf("failed to send get_block: %v", err)
+	}
+
+	var respGet map[string]interface{}
+	if err := json.NewDecoder(conn).Decode(&respGet); err != nil {
+		t.Fatalf("failed to read get_block response: %v", err)
+	}
+	if respGet["status"] != "success" || respGet["command"] != "get_block" {
+		t.Errorf("unexpected get_block response: %v", respGet)
+	}
+	if respGet["data"] != "aGVsbG8gYmxvY2s=" {
+		t.Errorf("expected 'aGVsbG8gYmxvY2s=', got %v", respGet["data"])
 	}
 }
