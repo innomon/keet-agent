@@ -14,7 +14,7 @@ This plan details the steps to implement Hypercore message encoding, flat-file s
     - [x] Verify storage driver tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Binary Frame Serialization and Flat File Storage' (Protocol in workflow.md)
 
-## Phase 2: Merkle Tree and Cryptographic Verification
+## Phase 2: Merkle Tree and Cryptographic Verification [checkpoint: 3cd011c]
 
 - [x] Task: Merkle Tree Math and Node Hashing (TDD) (67e8f0e)
     - [x] Write unit tests for leaf and parent node calculations
@@ -24,7 +24,7 @@ This plan details the steps to implement Hypercore message encoding, flat-file s
     - [x] Write unit tests validating valid/invalid signatures on Merkle tree root hashes
     - [x] Implement Ed25519 signature checks using public keys in `pkg/hypercore/crypto.go`
     - [x] Verify cryptographic verification tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Merkle Tree and Cryptographic Verification' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Merkle Tree and Cryptographic Verification' (Protocol in workflow.md)
 
 ## Phase 3: IPC Socket Commands and Integration
 
