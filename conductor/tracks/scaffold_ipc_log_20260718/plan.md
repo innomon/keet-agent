@@ -20,7 +20,7 @@ This plan outlines the steps to initialize the Go module, configure the structur
     - [x] Verify logger and wrapper tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Project Scaffolding and Structured Logging' (Protocol in workflow.md)
 
-## Phase 2: IPC Unix Domain Socket
+## Phase 2: IPC Unix Domain Socket [checkpoint: 6412f3b]
 
 - [x] Task: Unix Domain Socket Listener (TDD) (cc2e35e)
     - [x] Write tests for socket initialization, cleanup of stale descriptors, and basic connection acceptance
@@ -36,4 +36,4 @@ This plan outlines the steps to initialize the Go module, configure the structur
     - [x] Implement main entry point `cmd/gateway/main.go` integrating logger and IPC listener
     - [x] Configure `runtime.GOMAXPROCS` to use all M4 CPU cores
     - [x] Verify the complete gateway runs, logs to console + files, and listens on the Unix socket
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: IPC Unix Domain Socket' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: IPC Unix Domain Socket' (Protocol in workflow.md)
