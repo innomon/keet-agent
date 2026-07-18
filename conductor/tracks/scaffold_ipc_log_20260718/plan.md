@@ -27,11 +27,11 @@ This plan outlines the steps to initialize the Go module, configure the structur
     - [x] Implement Unix domain socket listener binding to `/tmp/keet-adk.sock` in `pkg/ipc/socket.go`
     - [x] Implement stale socket deletion on startup
     - [x] Verify socket listener tests pass
-- [ ] Task: Multi-Core Concurrency & Client Handler (TDD)
-    - [ ] Write tests for concurrent client routing and asynchronous worker execution
-    - [ ] Implement concurrent client socket reader/writer loops with goroutine worker pools
-    - [ ] Handle graceful termination signals (SIGINT, SIGTERM) to close socket listener and clean up socket files
-    - [ ] Verify concurrency and client handler tests pass
+- [x] Task: Multi-Core Concurrency & Client Handler (TDD) (d8123b3)
+    - [x] Write tests for concurrent client routing and asynchronous worker execution
+    - [x] Implement concurrent client socket reader/writer loops with goroutine worker pools
+    - [x] Handle graceful termination signals (SIGINT, SIGTERM) to close socket listener and clean up socket files
+    - [x] Verify concurrency and client handler tests pass
 - [ ] Task: Main Gateway Loop
     - [ ] Implement main entry point `cmd/gateway/main.go` integrating logger and IPC listener
     - [ ] Configure `runtime.GOMAXPROCS` to use all M4 CPU cores
