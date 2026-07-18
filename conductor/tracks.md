@@ -14,5 +14,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Implement Hypercore v10 protocol wire implementation in Go for P2P append-only logs**
+- [x] **Track: Implement Hypercore v10 protocol wire implementation in Go for P2P append-only logs**
   *Link: [./tracks/hypercore_wire_20260718/](./tracks/hypercore_wire_20260718/)*
