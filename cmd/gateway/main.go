@@ -12,6 +12,7 @@ import (
 
 	"github.com/innomon/keet-adk-gateway/pkg/config"
 	"github.com/innomon/keet-adk-gateway/pkg/dht"
+	"github.com/innomon/keet-adk-gateway/pkg/hypercore"
 	"github.com/innomon/keet-adk-gateway/pkg/ipc"
 	"github.com/innomon/keet-adk-gateway/pkg/logger"
 )
@@ -59,6 +60,14 @@ func main() {
 	}
 	swarmRegistry := dht.NewSwarmRegistry()
 
+	// Initialize Hypercore flat-file Storage
+	hypercoreStorage, err := hypercore.NewStorage(cfg.StorageDir)
+	if err != nil {
+		cl.Errorf("Failed to initialize Hypercore Storage: %v", err)
+		os.Exit(1)
+	}
+	defer hypercoreStorage.Close()
+
 	cl.Infof("ADK Communication Socket Ready at path: %s", cfg.SocketPath)
 
 	go func() {
@@ -80,6 +89,6 @@ func main() {
 				continue
 			}
 		}
-		go ipc.HandleClient(ctx, conn, dhtNode, swarmRegistry)
+		go ipc.HandleClient(ctx, conn, dhtNode, swarmRegistry, hypercoreStorage)
 	}
 }

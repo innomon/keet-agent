@@ -32,6 +32,9 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	if cfg.SocketPath != "/tmp/keet-adk.sock" {
 		t.Errorf("expected default SocketPath '/tmp/keet-adk.sock', got %q", cfg.SocketPath)
 	}
+	if cfg.StorageDir != "storage" {
+		t.Errorf("expected default StorageDir 'storage', got %q", cfg.StorageDir)
+	}
 }
 
 func TestLoadConfig_EnvOverrides(t *testing.T) {
@@ -39,12 +42,14 @@ func TestLoadConfig_EnvOverrides(t *testing.T) {
 	os.Setenv("CONSOLE_LOG_ENABLED", "false")
 	os.Setenv("LOG_MAX_SIZE_MB", "25")
 	os.Setenv("SOCKET_PATH", "/tmp/custom.sock")
+	os.Setenv("STORAGE_DIR", "custom_storage")
 
 	defer func() {
 		os.Unsetenv("LOG_LEVEL")
 		os.Unsetenv("CONSOLE_LOG_ENABLED")
 		os.Unsetenv("LOG_MAX_SIZE_MB")
 		os.Unsetenv("SOCKET_PATH")
+		os.Unsetenv("STORAGE_DIR")
 	}()
 
 	cfg := LoadConfig()
@@ -60,5 +65,8 @@ func TestLoadConfig_EnvOverrides(t *testing.T) {
 	}
 	if cfg.SocketPath != "/tmp/custom.sock" {
 		t.Errorf("expected SocketPath '/tmp/custom.sock', got %q", cfg.SocketPath)
+	}
+	if cfg.StorageDir != "custom_storage" {
+		t.Errorf("expected StorageDir 'custom_storage', got %q", cfg.StorageDir)
 	}
 }

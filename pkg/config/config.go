@@ -14,6 +14,7 @@ type Config struct {
 	LogMaxSizeMB   int
 	LogMaxBackups  int
 	SocketPath     string
+	StorageDir     string
 }
 
 func LoadConfig() Config {
@@ -26,6 +27,7 @@ func LoadConfig() Config {
 		LogMaxSizeMB:   getEnvInt("LOG_MAX_SIZE_MB", 10),
 		LogMaxBackups:  getEnvInt("LOG_MAX_BACKUPS", 5),
 		SocketPath:     getEnv("SOCKET_PATH", "/tmp/keet-adk.sock"),
+		StorageDir:     getEnv("STORAGE_DIR", "storage"),
 	}
 }
 
