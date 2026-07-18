@@ -15,6 +15,12 @@ type Config struct {
 	LogMaxBackups  int
 	SocketPath     string
 	StorageDir     string
+	DBHost         string
+	DBPort         string
+	DBUser         string
+	DBPassword     string
+	DBName         string
+	DBSSLMode      string
 }
 
 func LoadConfig() Config {
@@ -28,6 +34,12 @@ func LoadConfig() Config {
 		LogMaxBackups:  getEnvInt("LOG_MAX_BACKUPS", 5),
 		SocketPath:     getEnv("SOCKET_PATH", "/tmp/keet-adk.sock"),
 		StorageDir:     getEnv("STORAGE_DIR", "storage"),
+		DBHost:         getEnv("DB_HOST", "localhost"),
+		DBPort:         getEnv("DB_PORT", "5432"),
+		DBUser:         getEnv("DB_USER", "postgres"),
+		DBPassword:     getEnv("DB_PASSWORD", "postgres"),
+		DBName:         getEnv("DB_NAME", "keet_gateway"),
+		DBSSLMode:      getEnv("DB_SSLMODE", "disable"),
 	}
 }
 
