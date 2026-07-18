@@ -22,11 +22,11 @@ This plan outlines the steps to initialize the Go module, configure the structur
 
 ## Phase 2: IPC Unix Domain Socket
 
-- [ ] Task: Unix Domain Socket Listener (TDD)
-    - [ ] Write tests for socket initialization, cleanup of stale descriptors, and basic connection acceptance
-    - [ ] Implement Unix domain socket listener binding to `/tmp/keet-adk.sock` in `pkg/ipc/socket.go`
-    - [ ] Implement stale socket deletion on startup
-    - [ ] Verify socket listener tests pass
+- [x] Task: Unix Domain Socket Listener (TDD) (cc2e35e)
+    - [x] Write tests for socket initialization, cleanup of stale descriptors, and basic connection acceptance
+    - [x] Implement Unix domain socket listener binding to `/tmp/keet-adk.sock` in `pkg/ipc/socket.go`
+    - [x] Implement stale socket deletion on startup
+    - [x] Verify socket listener tests pass
 - [ ] Task: Multi-Core Concurrency & Client Handler (TDD)
     - [ ] Write tests for concurrent client routing and asynchronous worker execution
     - [ ] Implement concurrent client socket reader/writer loops with goroutine worker pools
