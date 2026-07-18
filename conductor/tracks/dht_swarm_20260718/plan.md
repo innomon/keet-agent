@@ -36,7 +36,7 @@ This plan details the steps to implement HyperDHT bootstrapping, topic hashing, 
     - [x] Write tests for `join_swarm` and `leave_swarm` JSON-RPC socket frames
     - [x] Extend socket IPC router in `pkg/ipc/socket.go` to support `join_swarm` and `leave_swarm` commands
     - [x] Verify IPC command tests pass
-- [ ] Task: Integration and Gateway Run Verification
-    - [ ] Integrate DHT nodes and swarm registry into `cmd/gateway/main.go`
-    - [ ] Verify that running the gateway, sending socket join command, and swarming on a test topic discovery works and logs properly
+- [x] Task: Integration and Gateway Run Verification (e76ad80)
+    - [x] Integrate DHT nodes and swarm registry into `cmd/gateway/main.go`
+    - [x] Verify that running the gateway, sending socket join command, and swarming on a test topic discovery works and logs properly
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: IPC Command API Integration' (Protocol in workflow.md)
