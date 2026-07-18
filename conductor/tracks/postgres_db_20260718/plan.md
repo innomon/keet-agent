@@ -4,11 +4,11 @@ This plan details the steps to implement DB configuration, connection pooling, h
 
 ## Phase 1: DB Configuration, Connection Pools, and Migrations
 
-- [ ] Task: Database Configuration and Pool Initialization (TDD)
-    - [ ] Write unit tests for database configuration properties
-    - [ ] Add `DBHost`, `DBPort`, `DBUser`, `DBPassword`, `DBName`, and `DBSSLMode` variables to `pkg/config/config.go`
-    - [ ] Implement database pool connection in `pkg/db/postgres.go` using `github.com/jackc/pgx/v5/pgxpool`
-    - [ ] Verify configuration and pool tests pass
+- [x] Task: Database Configuration and Pool Initialization (TDD) (5cbecaf)
+    - [x] Write unit tests for database configuration properties
+    - [x] Add `DBHost`, `DBPort`, `DBUser`, `DBPassword`, `DBName`, and `DBSSLMode` variables to `pkg/config/config.go`
+    - [x] Implement database pool connection in `pkg/db/postgres.go` using `github.com/jackc/pgx/v5/pgxpool`
+    - [x] Verify configuration and pool tests pass
 - [ ] Task: Schema Loader and SQL Migrations (TDD)
     - [ ] Write unit tests for running database schema migrations sequentially
     - [ ] Implement a raw SQL schema migration loader in `pkg/db/migrations.go` executing tables creation query on startup
