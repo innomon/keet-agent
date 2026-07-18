@@ -9,10 +9,10 @@ This plan outlines the steps to initialize the Go module, configure the structur
     - [x] Set up basic directory structure (cmd/gateway, pkg/logger, pkg/ipc)
     - [x] Add basic configuration file structure
     - [x] Commit scaffolding changes
-- [ ] Task: Thread-Safe Log Rotator Implementation (TDD)
-    - [ ] Write tests for LogRotator (file creation, size-based rotation, backup pruning)
-    - [ ] Implement LogRotator in `pkg/logger/rotator.go` using only standard library
-    - [ ] Verify LogRotator tests pass
+- [x] Task: Thread-Safe Log Rotator Implementation (TDD) (c15af85)
+    - [x] Write tests for LogRotator (file creation, size-based rotation, backup pruning)
+    - [x] Implement LogRotator in `pkg/logger/rotator.go` using only standard library
+    - [x] Verify LogRotator tests pass
 - [ ] Task: Structured Multiplexed Logger (TDD)
     - [ ] Write tests for MultiHandler and Logger Init
     - [ ] Implement MultiHandler and Logger configuration in `pkg/logger/logger.go`
