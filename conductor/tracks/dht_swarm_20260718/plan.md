@@ -40,3 +40,6 @@ This plan details the steps to implement HyperDHT bootstrapping, topic hashing, 
     - [x] Integrate DHT nodes and swarm registry into `cmd/gateway/main.go`
     - [x] Verify that running the gateway, sending socket join command, and swarming on a test topic discovery works and logs properly
 - [x] Task: Conductor - User Manual Verification 'Phase 3: IPC Command API Integration' (Protocol in workflow.md)
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions f8846e7
