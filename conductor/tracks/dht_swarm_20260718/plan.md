@@ -12,10 +12,10 @@ This plan details the steps to implement HyperDHT bootstrapping, topic hashing, 
     - [x] Write tests for Blake2b topic hashing (validating string topics vs 32-byte raw topics)
     - [x] Implement Blake2b topic hashing in `pkg/dht/topic.go`
     - [x] Verify hashing tests pass
-- [ ] Task: Kademlia Routing and Node Discovery (TDD)
-    - [ ] Write tests for routing table updates and lookup functions
-    - [ ] Implement local Kademlia routing table and bootstrap node discovery protocol
-    - [ ] Verify routing table and discovery tests pass
+- [x] Task: Kademlia Routing and Node Discovery (TDD) (df8fcd6)
+    - [x] Write tests for routing table updates and lookup functions
+    - [x] Implement local Kademlia routing table and bootstrap node discovery protocol
+    - [x] Verify routing table and discovery tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: HyperDHT Node and Bootstrapping' (Protocol in workflow.md)
 
 ## Phase 2: Noise Handshake and Channel Security
