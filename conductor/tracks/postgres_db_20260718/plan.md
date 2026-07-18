@@ -2,7 +2,7 @@
 
 This plan details the steps to implement DB configuration, connection pooling, handcrafted SQL migrations, and repository logic.
 
-## Phase 1: DB Configuration, Connection Pools, and Migrations
+## Phase 1: DB Configuration, Connection Pools, and Migrations [checkpoint: 4472d12]
 
 - [x] Task: Database Configuration and Pool Initialization (TDD) (5cbecaf)
     - [x] Write unit tests for database configuration properties
@@ -13,7 +13,7 @@ This plan details the steps to implement DB configuration, connection pooling, h
     - [x] Write unit tests for running database schema migrations sequentially
     - [x] Implement a raw SQL schema migration loader in `pkg/db/migrations.go` executing tables creation query on startup
     - [x] Verify migration loader tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: DB Configuration, Connection Pools, and Migrations' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: DB Configuration, Connection Pools, and Migrations' (Protocol in workflow.md)
 
 ## Phase 2: Swarm and Block Repositories
 
