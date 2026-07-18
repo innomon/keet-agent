@@ -52,6 +52,9 @@ func (r *SwarmRepository) GetActiveSwarms(ctx context.Context) ([]string, error)
 		}
 		keys = append(keys, key)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("db active swarms iteration error: %w", err)
+	}
 
 	return keys, nil
 }
