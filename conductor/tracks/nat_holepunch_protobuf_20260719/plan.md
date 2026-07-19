@@ -25,9 +25,9 @@
 - [x] Task: Define compliant Hypercore Wire Protobuf Schema and Serialization [73919fb]
     - [x] Write unit tests verifying Hypercore wire message validation rules (max frame length, missing fields constraint, capability field length checking) (red phase).
     - [x] Define hypercore wire messages (Feed, Handshake, Request, Data, Cancel) using a compatible lightweight protobuf schema/generator or manual parser in `pkg/network/protobuf.go` (green phase).
-- [ ] Task: Implement Extension Messages and Compression
-    - [ ] Write unit tests verifying capabilities exchange and Inflate/Deflate compression/decompression on wire frames (red phase).
-    - [ ] Implement compression algorithms and extension payload parsing on replication sessions in `pkg/hypercore/sync.go` (green phase).
+- [x] Task: Implement Extension Messages and Compression [f24193e]
+    - [x] Write unit tests verifying capabilities exchange and Inflate/Deflate compression/decompression on wire frames (red phase).
+    - [x] Implement compression algorithms and extension payload parsing on replication sessions in `pkg/hypercore/sync.go` (green phase).
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Hypercore Wire Protobuf Spec Compliance' (Protocol in workflow.md)
 
 ## Phase 4: Integration and End-to-End Traversal Testing
