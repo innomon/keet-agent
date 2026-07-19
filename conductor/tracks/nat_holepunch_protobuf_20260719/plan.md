@@ -10,7 +10,7 @@
     - [x] Implement TURN protocol state transitions, allocation management, and UDP relay framing in `pkg/utp/turn.go` (green phase).
 - [x] Task: Conductor - User Manual Verification 'Phase 1: STUN & TURN Client Helpers' (Protocol in workflow.md) [1d133fe]
 
-## Phase 2: ICE Hole Punching and Connection Fallbacks
+## Phase 2: ICE Hole Punching and Connection Fallbacks [checkpoint: 51a4518]
 
 - [x] Task: Implement ICE Candidate Exchange and Hole Punching [2898ede]
     - [x] Write unit tests verifying candidate exchange sequence, direct socket hole-punching attempts, and successful direct binding (red phase).
@@ -18,7 +18,7 @@
 - [x] Task: Implement TURN UDP Relay Fallback [aaa30ab]
     - [x] Write unit tests verifying relay fallback switching logic upon direct connection timeout or failure (red phase).
     - [x] Integrate fallback relay transport path into client dialing and server listener handling in `pkg/utp/conn.go` (green phase).
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: ICE Hole Punching and Connection Fallbacks' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: ICE Hole Punching and Connection Fallbacks' (Protocol in workflow.md) [51a4518]
 
 ## Phase 3: Hypercore Wire Protobuf Spec Compliance
 
