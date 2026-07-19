@@ -21,6 +21,7 @@ type PeerManager struct {
 	listener  net.Listener
 	mu        sync.Mutex
 	conns     map[string]net.Conn
+	sessions  map[string]*hypercore.SyncSession
 	wg        sync.WaitGroup
 	cancel    context.CancelFunc
 }
@@ -32,6 +33,7 @@ func NewPeerManager(localPriv ed25519.PrivateKey, storage *hypercore.Storage, bl
 		blockRepo: blockRepo,
 		feedKey:   feedKey,
 		conns:     make(map[string]net.Conn),
+		sessions:  make(map[string]*hypercore.SyncSession),
 	}
 }
 
@@ -93,17 +95,20 @@ func (pm *PeerManager) handleIncoming(ctx context.Context, conn net.Conn) {
 	defer secureConn.Close()
 
 	peerKey := fmt.Sprintf("%x", remotePub)
+	session := hypercore.NewSyncSession(secureConn, pm.storage, pm.blockRepo, pm.feedKey, pm.localPriv, remotePub, false)
+
 	pm.mu.Lock()
 	pm.conns[peerKey] = secureConn
+	pm.sessions[peerKey] = session
 	pm.mu.Unlock()
 
 	defer func() {
 		pm.mu.Lock()
 		delete(pm.conns, peerKey)
+		delete(pm.sessions, peerKey)
 		pm.mu.Unlock()
 	}()
 
-	session := hypercore.NewSyncSession(secureConn, pm.storage, pm.blockRepo, pm.feedKey, pm.localPriv, remotePub, false)
 	if err := session.Run(ctx); err != nil {
 		slog.Error("Incoming sync session error", "peer", peerKey, "err", err)
 	}
@@ -120,19 +125,32 @@ func (pm *PeerManager) handleOutgoing(ctx context.Context, conn net.Conn) {
 	defer secureConn.Close()
 
 	peerKey := fmt.Sprintf("%x", remotePub)
+	session := hypercore.NewSyncSession(secureConn, pm.storage, pm.blockRepo, pm.feedKey, pm.localPriv, remotePub, true)
+
 	pm.mu.Lock()
 	pm.conns[peerKey] = secureConn
+	pm.sessions[peerKey] = session
 	pm.mu.Unlock()
 
 	defer func() {
 		pm.mu.Lock()
 		delete(pm.conns, peerKey)
+		delete(pm.sessions, peerKey)
 		pm.mu.Unlock()
 	}()
 
-	session := hypercore.NewSyncSession(secureConn, pm.storage, pm.blockRepo, pm.feedKey, pm.localPriv, remotePub, true)
 	if err := session.Run(ctx); err != nil {
 		slog.Error("Outgoing sync session error", "peer", peerKey, "err", err)
+	}
+}
+
+func (pm *PeerManager) BroadcastHave(length uint64) {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+	for _, s := range pm.sessions {
+		if err := s.NotifyHave(length); err != nil {
+			slog.Error("Failed to send Have broadcast to session", "err", err)
+		}
 	}
 }
 

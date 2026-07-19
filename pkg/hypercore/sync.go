@@ -38,6 +38,18 @@ func NewSyncSession(conn net.Conn, storage *Storage, blockRepo *db.BlockReposito
 	}
 }
 
+func (s *SyncSession) NotifyHave(length uint64) error {
+	haveMsg := &Have{
+		Start: 0,
+		Len:   length,
+	}
+	haveBytes, err := EncodeHave(haveMsg)
+	if err != nil {
+		return err
+	}
+	return s.writeFrame(haveBytes)
+}
+
 func (s *SyncSession) Run(ctx context.Context) error {
 	// 1. Send Handshake
 	localHandshake := &Handshake{
