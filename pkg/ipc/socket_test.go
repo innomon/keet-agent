@@ -472,13 +472,13 @@ func TestSocket_DHTIntegration(t *testing.T) {
 	tpA, _ := dht.NewInProcessTransport("nodeA")
 	idA := [32]byte{1}
 	nodeA, _ := dht.NewDHTNode(&dht.Config{LocalID: idA, Transport: tpA, BootstrapNodes: []string{}})
-	_ = nodeA.Start(ctx)
+	_ = nodeA.Start(ctx, nil)
 	defer nodeA.Stop()
 
 	tpB, _ := dht.NewInProcessTransport("nodeB")
 	idB := [32]byte{2}
 	nodeB, _ := dht.NewDHTNode(&dht.Config{LocalID: idB, Transport: tpB, BootstrapNodes: []string{"nodeA"}})
-	_ = nodeB.Start(ctx)
+	_ = nodeB.Start(ctx, nil)
 	defer nodeB.Stop()
 
 	// Pre-announce nodeA on the topic key

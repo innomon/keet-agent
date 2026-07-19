@@ -3,6 +3,7 @@ package dht
 import (
 	"context"
 	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"os"
@@ -20,6 +21,11 @@ type Config struct {
 	Port             int
 	Transport        Transport
 	AnnounceInterval time.Duration
+}
+
+// SwarmRepository is a decoupled interface for querying persisted active swarm topics.
+type SwarmRepository interface {
+	GetActiveSwarms(ctx context.Context) ([]string, error)
 }
 
 // DHTNode represents an active instance of a Kademlia node.
@@ -106,11 +112,12 @@ func (n *DHTNode) GetBootstrapNodes() []string {
 	return n.bootstrapNodes
 }
 
-// Start begins processing inbound packets and bootstraps the node.
-func (n *DHTNode) Start(ctx context.Context) error {
+// Start begins processing inbound packets, bootstraps the node, and re-hydrates active DB swarms.
+func (n *DHTNode) Start(ctx context.Context, repo SwarmRepository) error {
 	n.dispatcher.Start()
 
 	if len(n.bootstrapNodes) == 0 {
+		n.rehydrateSwarms(ctx, repo)
 		return nil
 	}
 
@@ -143,7 +150,52 @@ func (n *DHTNode) Start(ctx context.Context) error {
 
 	_ = n.iterativeFindNode(ctx, n.localID)
 
+	n.rehydrateSwarms(ctx, repo)
+
 	return nil
+}
+
+// SetP2PPort configures the TCP listening port of the PeerManager for this DHT Node.
+func (n *DHTNode) SetP2PPort(port uint16) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.localRegistry != nil {
+		n.localRegistry.P2PPort = port
+	}
+}
+
+func (n *DHTNode) rehydrateSwarms(ctx context.Context, repo SwarmRepository) {
+	if repo == nil {
+		return
+	}
+
+	activeKeys, err := repo.GetActiveSwarms(ctx)
+	if err != nil {
+		return
+	}
+
+	for _, keyHex := range activeKeys {
+		keyBytes, err := hex.DecodeString(keyHex)
+		if err != nil || len(keyBytes) != 32 {
+			continue
+		}
+		var topicKey [32]byte
+		copy(topicKey[:], keyBytes)
+
+		go func(tk [32]byte) {
+			// Brief delay to let bootstrapping stabilize
+			time.Sleep(50 * time.Millisecond)
+
+			_ = n.Announce(ctx, tk, 0)
+
+			peers, err := n.Lookup(ctx, tk)
+			if err == nil && n.localRegistry != nil {
+				for _, p := range peers {
+					n.localRegistry.RegisterPeer(tk, p)
+				}
+			}
+		}(topicKey)
+	}
 }
 
 // Stop terminates background processes and releases the transport.
@@ -333,6 +385,14 @@ func (n *DHTNode) iterativeFindNode(ctx context.Context, target [32]byte) []Cont
 
 // Announce registers local peer port on a given topic key.
 func (n *DHTNode) Announce(ctx context.Context, topic [32]byte, port uint16) error {
+	if port == 0 {
+		n.mu.Lock()
+		if n.localRegistry != nil {
+			port = n.localRegistry.P2PPort
+		}
+		n.mu.Unlock()
+	}
+
 	var localAddr string
 	if _, ok := n.transport.(*UDPTransport); ok {
 		localAddr = net.JoinHostPort("127.0.0.1", strconv.Itoa(int(port)))

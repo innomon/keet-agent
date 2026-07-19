@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"os"
 	"os/signal"
 	"runtime"
@@ -110,6 +111,17 @@ func main() {
 	}
 	defer pm.Close()
 	cl.Infof("P2P Listener running at address: %s", pm.Addr().String())
+
+	p2pPort := uint16(pm.Addr().(*net.TCPAddr).Port)
+	swarmRegistry.P2PPort = p2pPort
+	dhtNode.SetP2PPort(p2pPort)
+
+	// Start the DHT Node with re-hydration repo!
+	if err := dhtNode.Start(ctx, swarmRepo); err != nil {
+		cl.Errorf("Failed to start DHT Node: %v", err)
+		os.Exit(1)
+	}
+	defer dhtNode.Stop()
 
 	// Wire Swarm Discovery to PeerManager Auto-Dialing
 	swarmRegistry.OnRegisterPeer = func(topic [32]byte, peerAddr string) {

@@ -8,6 +8,14 @@ import (
 	"time"
 )
 
+type mockSwarmRepository struct {
+	keys []string
+}
+
+func (m *mockSwarmRepository) GetActiveSwarms(ctx context.Context) ([]string, error) {
+	return m.keys, nil
+}
+
 func TestDHTConfig_Defaults(t *testing.T) {
 	node, err := NewDHTNode(nil) // nil config uses defaults
 	if err != nil {
@@ -68,7 +76,7 @@ func TestDHTNode_Bootstrap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create nodeA: %v", err)
 	}
-	if err := nodeA.Start(ctx); err != nil {
+	if err := nodeA.Start(ctx, nil); err != nil {
 		t.Fatalf("failed to start nodeA: %v", err)
 	}
 	defer nodeA.Stop()
@@ -87,7 +95,7 @@ func TestDHTNode_Bootstrap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create nodeB: %v", err)
 	}
-	if err := nodeB.Start(ctx); err != nil {
+	if err := nodeB.Start(ctx, nil); err != nil {
 		t.Fatalf("failed to start nodeB: %v", err)
 	}
 	defer nodeB.Stop()
@@ -109,17 +117,17 @@ func TestDHTNode_AnnounceAndLookup(t *testing.T) {
 	// Setup a small 3-node network: B and C bootstrap via A.
 	tpA, _ := NewInProcessTransport("nodeA")
 	nodeA, _ := NewDHTNode(&Config{LocalID: [32]byte{1}, Transport: tpA, BootstrapNodes: []string{}})
-	_ = nodeA.Start(ctx)
+	_ = nodeA.Start(ctx, nil)
 	defer nodeA.Stop()
 
 	tpB, _ := NewInProcessTransport("nodeB")
 	nodeB, _ := NewDHTNode(&Config{LocalID: [32]byte{2}, Transport: tpB, BootstrapNodes: []string{"nodeA"}})
-	_ = nodeB.Start(ctx)
+	_ = nodeB.Start(ctx, nil)
 	defer nodeB.Stop()
 
 	tpC, _ := NewInProcessTransport("nodeC")
 	nodeC, _ := NewDHTNode(&Config{LocalID: [32]byte{3}, Transport: tpC, BootstrapNodes: []string{"nodeA"}})
-	_ = nodeC.Start(ctx)
+	_ = nodeC.Start(ctx, nil)
 	defer nodeC.Stop()
 
 	topic := [32]byte{100, 101, 102}
@@ -158,12 +166,12 @@ func TestDHTNode_Leave(t *testing.T) {
 
 	tpA, _ := NewInProcessTransport("nodeA")
 	nodeA, _ := NewDHTNode(&Config{LocalID: [32]byte{1}, Transport: tpA, BootstrapNodes: []string{}})
-	_ = nodeA.Start(ctx)
+	_ = nodeA.Start(ctx, nil)
 	defer nodeA.Stop()
 
 	tpB, _ := NewInProcessTransport("nodeB")
 	nodeB, _ := NewDHTNode(&Config{LocalID: [32]byte{2}, Transport: tpB, BootstrapNodes: []string{"nodeA"}})
-	_ = nodeB.Start(ctx)
+	_ = nodeB.Start(ctx, nil)
 	defer nodeB.Stop()
 
 	topic := [32]byte{100, 101, 102}
@@ -186,5 +194,56 @@ func TestDHTNode_Leave(t *testing.T) {
 	peers, _ = nodeB.Lookup(ctx, topic)
 	if len(peers) != 0 {
 		t.Errorf("expected 0 peers after B left, got: %v", peers)
+	}
+}
+
+func TestDHTNode_Rehydration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	tpA, _ := NewInProcessTransport("nodeA")
+	idA := [32]byte{1}
+	nodeA, _ := NewDHTNode(&Config{LocalID: idA, Transport: tpA, BootstrapNodes: []string{}})
+	_ = nodeA.Start(ctx, nil)
+	defer nodeA.Stop()
+
+	// Pre-announce nodeA on a topic
+	topicKey := [32]byte{10, 20, 30}
+	_ = nodeA.Announce(ctx, topicKey, 7001)
+
+	// Setup nodeB with a mock swarm repository containing the topicKey in hex
+	tpB, _ := NewInProcessTransport("nodeB")
+	idB := [32]byte{2}
+	nodeB, _ := NewDHTNode(&Config{
+		LocalID:        idB,
+		Transport:      tpB,
+		BootstrapNodes: []string{"nodeA"},
+	})
+	nodeB.SetP2PPort(7002)
+
+	mockRepo := &mockSwarmRepository{
+		keys: []string{"0a141e0000000000000000000000000000000000000000000000000000000000"}, // 10, 20, 30... in hex
+	}
+
+	// Start B with the mock repo
+	if err := nodeB.Start(ctx, mockRepo); err != nil {
+		t.Fatalf("failed to start B: %v", err)
+	}
+	defer nodeB.Stop()
+
+	// Give a brief moment for background re-hydration lookup/announces to run
+	time.Sleep(150 * time.Millisecond)
+
+	// Verify nodeB's local registry got populated with nodeA's address from the re-hydration lookup!
+	peers, _ := nodeB.Lookup(ctx, topicKey)
+	foundA := false
+	for _, p := range peers {
+		if p == "nodeA:7001" || p == "nodeA" {
+			foundA = true
+		}
+	}
+
+	if !foundA {
+		t.Errorf("expected nodeB to re-hydrate and discover nodeA, got peers: %v", peers)
 	}
 }
