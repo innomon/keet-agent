@@ -20,7 +20,7 @@ import (
 type PeerManager struct {
 	localPriv     ed25519.PrivateKey
 	storage       *hypercore.Storage
-	blockRepo     *db.BlockRepository
+	blockRepo     db.BlockRepository
 	feedKey       string
 	listener      net.Listener
 	mu            sync.Mutex
@@ -34,7 +34,8 @@ type PeerManager struct {
 }
 
 // NewPeerManager instantiates a new PeerManager with the given credentials.
-func NewPeerManager(localPriv ed25519.PrivateKey, storage *hypercore.Storage, blockRepo *db.BlockRepository, feedKey string) *PeerManager {
+func NewPeerManager(localPriv ed25519.PrivateKey, storage *hypercore.Storage, blockRepo db.BlockRepository, feedKey string) *PeerManager {
+
 	return &PeerManager{
 		localPriv: localPriv,
 		storage:   storage,

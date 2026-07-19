@@ -5,15 +5,15 @@ import (
 	"fmt"
 )
 
-type SwarmRepository struct {
+type PostgresSwarmRepository struct {
 	db *DB
 }
 
-func NewSwarmRepository(db *DB) *SwarmRepository {
-	return &SwarmRepository{db: db}
+func NewSwarmRepository(db *DB) SwarmRepository {
+	return &PostgresSwarmRepository{db: db}
 }
 
-func (r *SwarmRepository) RegisterSwarm(ctx context.Context, topicKey, topicName string) error {
+func (r *PostgresSwarmRepository) RegisterSwarm(ctx context.Context, topicKey, topicName string) error {
 	query := `
 	INSERT INTO swarms (topic_key, topic_name) VALUES ($1, $2)
 	ON CONFLICT (topic_key) DO UPDATE SET topic_name = $2;`
@@ -25,7 +25,7 @@ func (r *SwarmRepository) RegisterSwarm(ctx context.Context, topicKey, topicName
 	return nil
 }
 
-func (r *SwarmRepository) UnregisterSwarm(ctx context.Context, topicKey string) error {
+func (r *PostgresSwarmRepository) UnregisterSwarm(ctx context.Context, topicKey string) error {
 	query := `DELETE FROM swarms WHERE topic_key = $1;`
 
 	_, err := r.db.Pool.Exec(ctx, query, topicKey)
@@ -35,7 +35,7 @@ func (r *SwarmRepository) UnregisterSwarm(ctx context.Context, topicKey string) 
 	return nil
 }
 
-func (r *SwarmRepository) GetActiveSwarms(ctx context.Context) ([]string, error) {
+func (r *PostgresSwarmRepository) GetActiveSwarms(ctx context.Context) ([]string, error) {
 	query := `SELECT topic_key FROM swarms;`
 
 	rows, err := r.db.Pool.Query(ctx, query)
@@ -58,3 +58,4 @@ func (r *SwarmRepository) GetActiveSwarms(ctx context.Context) ([]string, error)
 
 	return keys, nil
 }
+

@@ -15,6 +15,8 @@ type Config struct {
 	LogMaxBackups  int
 	SocketPath     string
 	StorageDir     string
+	DBType         string // "postgres" or "bbolt"
+	BBoltPath      string // path to bbolt file (e.g. "storage/gateway.db")
 	DBHost         string
 	DBPort         string
 	DBUser         string
@@ -36,6 +38,8 @@ func LoadConfig() Config {
 		LogMaxBackups:  getEnvInt("LOG_MAX_BACKUPS", 5),
 		SocketPath:     getEnv("SOCKET_PATH", "/tmp/keet-adk.sock"),
 		StorageDir:     getEnv("STORAGE_DIR", "storage"),
+		DBType:         getEnv("DB_TYPE", "postgres"),
+		BBoltPath:      getEnv("BBOLT_PATH", "storage/gateway.db"),
 		DBHost:         getEnv("DB_HOST", "localhost"),
 		DBPort:         getEnv("DB_PORT", "5432"),
 		DBUser:         getEnv("DB_USER", "postgres"),
@@ -46,6 +50,7 @@ func LoadConfig() Config {
 		P2PListenAddr:  getEnv("P2P_LISTEN_ADDR", "127.0.0.1"),
 	}
 }
+
 
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {

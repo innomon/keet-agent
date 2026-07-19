@@ -67,23 +67,15 @@ func main() {
 	}
 	swarmRegistry := dht.NewSwarmRegistry()
 
-	// Initialize PostgreSQL database connection pool
-	connPool, err := db.Connect(ctx, cfg)
+		// Initialize database storage backend (PostgreSQL or BBolt)
+	swarmRepo, blockRepo, dbClose, err := db.InitDatabase(ctx, cfg)
 	if err != nil {
-		cl.Errorf("Failed to connect to PostgreSQL database: %v", err)
+		cl.Errorf("Failed to initialize database: %v", err)
 		os.Exit(1)
 	}
-	defer connPool.Close()
+	defer dbClose()
+	cl.Infof("Successfully connected to database storage backend (type: %s)", cfg.DBType)
 
-	// Run database migrations
-	if err := db.RunMigrations(ctx, connPool); err != nil {
-		cl.Errorf("Failed to run database migrations: %v", err)
-		os.Exit(1)
-	}
-	cl.Infof("Successfully connected to PostgreSQL database and executed migrations")
-
-	swarmRepo := db.NewSwarmRepository(connPool)
-	blockRepo := db.NewBlockRepository(connPool)
 
 	// Initialize Hypercore flat-file Storage
 	hypercoreStorage, err := hypercore.NewStorage(cfg.StorageDir)

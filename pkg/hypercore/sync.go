@@ -18,7 +18,7 @@ import (
 type SyncSession struct {
 	conn          net.Conn
 	storage       *Storage
-	blockRepo     *db.BlockRepository
+	blockRepo     db.BlockRepository
 	feedKey       string
 	remotePub     ed25519.PublicKey
 	localPriv     ed25519.PrivateKey
@@ -28,7 +28,8 @@ type SyncSession struct {
 	deflateActive bool
 }
 
-func NewSyncSession(conn net.Conn, storage *Storage, blockRepo *db.BlockRepository, feedKey string, localPriv ed25519.PrivateKey, remotePub ed25519.PublicKey, isInitiator bool) *SyncSession {
+func NewSyncSession(conn net.Conn, storage *Storage, blockRepo db.BlockRepository, feedKey string, localPriv ed25519.PrivateKey, remotePub ed25519.PublicKey, isInitiator bool) *SyncSession {
+
 	return &SyncSession{
 		conn:        conn,
 		storage:     storage,

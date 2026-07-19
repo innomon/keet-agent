@@ -5,15 +5,15 @@ import (
 	"fmt"
 )
 
-type BlockRepository struct {
+type PostgresBlockRepository struct {
 	db *DB
 }
 
-func NewBlockRepository(db *DB) *BlockRepository {
-	return &BlockRepository{db: db}
+func NewBlockRepository(db *DB) BlockRepository {
+	return &PostgresBlockRepository{db: db}
 }
 
-func (r *BlockRepository) PutBlock(ctx context.Context, feedKey string, index uint64, value, signature []byte) error {
+func (r *PostgresBlockRepository) PutBlock(ctx context.Context, feedKey string, index uint64, value, signature []byte) error {
 	query := `
 	INSERT INTO blocks (feed_key, block_index, value, signature)
 	VALUES ($1, $2, $3, $4)
@@ -26,7 +26,7 @@ func (r *BlockRepository) PutBlock(ctx context.Context, feedKey string, index ui
 	return nil
 }
 
-func (r *BlockRepository) GetBlock(ctx context.Context, feedKey string, index uint64) ([]byte, []byte, error) {
+func (r *PostgresBlockRepository) GetBlock(ctx context.Context, feedKey string, index uint64) ([]byte, []byte, error) {
 	query := `SELECT value, signature FROM blocks WHERE feed_key = $1 AND block_index = $2;`
 
 	var value, signature []byte
@@ -37,3 +37,4 @@ func (r *BlockRepository) GetBlock(ctx context.Context, feedKey string, index ui
 
 	return value, signature, nil
 }
+

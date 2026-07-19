@@ -105,7 +105,7 @@ func (s *SocketListener) Close() error {
 	return err
 }
 
-func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dht.SwarmRegistry, store *hypercore.Storage, swarmRepo *db.SwarmRepository, blockRepo *db.BlockRepository) {
+func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dht.SwarmRegistry, store *hypercore.Storage, swarmRepo db.SwarmRepository, blockRepo db.BlockRepository) {
 	defer conn.Close()
 	slog.Info("New ADK Client pipeline bound successfully", "remote", conn.RemoteAddr())
 
