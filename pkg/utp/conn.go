@@ -20,7 +20,7 @@ const (
 	STATE_SYN_RECEIVED
 	// STATE_CONNECTED means handshake completed and the connection is active.
 	STATE_CONNECTED
-	// STATE_FIN_SENT means connection is shutting down.
+	// STATE_FIN_SENT means client/server ST_FIN has been sent.
 	STATE_FIN_SENT
 	// STATE_CLOSED means connection is closed.
 	STATE_CLOSED
@@ -37,12 +37,12 @@ type UTPConn struct {
 	ack        uint16
 	readBuf    chan *Packet
 	closeChan  chan struct{}
+	finAcked   chan struct{}
 	mu         sync.Mutex
 }
 
 // DialUTP initiates a new µTP connection to the target remote address using the provided SocketMux.
 func DialUTP(mux *SocketMux, addr net.Addr) (*UTPConn, error) {
-	// Generate random client connection ID
 	s := uint16(rand.Intn(60000) + 1000)
 	recvID := s + 1
 	sendID := s
@@ -56,6 +56,7 @@ func DialUTP(mux *SocketMux, addr net.Addr) (*UTPConn, error) {
 		seq:        1,
 		readBuf:    make(chan *Packet, 100),
 		closeChan:  make(chan struct{}),
+		finAcked:   make(chan struct{}, 1),
 	}
 
 	err := mux.RegisterConn(recvID, c.readBuf)
@@ -90,6 +91,7 @@ func DialUTP(mux *SocketMux, addr net.Addr) (*UTPConn, error) {
 		if pkt.Header.Type == ST_STATE && pkt.Header.AckNum == c.seq {
 			c.state = STATE_CONNECTED
 			c.ack = pkt.Header.SeqNum
+			go c.run()
 			return c, nil
 		}
 	case <-time.After(1 * time.Second):
@@ -97,6 +99,53 @@ func DialUTP(mux *SocketMux, addr net.Addr) (*UTPConn, error) {
 
 	mux.DeregisterConn(recvID)
 	return nil, errors.New("µTP connection handshake timed out")
+}
+
+func (c *UTPConn) run() {
+	for {
+		select {
+		case pkt := <-c.readBuf:
+			c.handlePacket(pkt)
+		case <-c.closeChan:
+			return
+		}
+	}
+}
+
+func (c *UTPConn) handlePacket(pkt *Packet) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	switch pkt.Header.Type {
+	case ST_FIN:
+		c.ack = pkt.Header.SeqNum
+		// Send ACK (ST_STATE)
+		ackPkt := &Packet{
+			Header: Header{
+				Type:    ST_STATE,
+				Version: 1,
+				ConnID:  c.sendID,
+				AckNum:  pkt.Header.SeqNum,
+			},
+		}
+		data, _ := ackPkt.Encode()
+		_, _ = c.mux.conn.WriteTo(data, c.remoteAddr)
+
+		c.state = STATE_CLOSED
+		c.mux.DeregisterConn(c.recvID)
+		close(c.closeChan)
+
+	case ST_STATE:
+		if c.state == STATE_FIN_SENT && pkt.Header.AckNum == c.seq {
+			c.state = STATE_CLOSED
+			c.mux.DeregisterConn(c.recvID)
+			select {
+			case c.finAcked <- struct{}{}:
+			default:
+			}
+			close(c.closeChan)
+		}
+	}
 }
 
 // Read reads data from the connection (stub for handshake phase).
@@ -112,9 +161,55 @@ func (c *UTPConn) Write(b []byte) (n int, err error) {
 // Close closes the connection.
 func (c *UTPConn) Close() error {
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.state = STATE_CLOSED
-	c.mux.DeregisterConn(c.recvID)
+	if c.state == STATE_CLOSED {
+		c.mu.Unlock()
+		return nil
+	}
+
+	c.state = STATE_FIN_SENT
+	c.seq++
+	finSeq := c.seq
+	sendID := c.sendID
+	remoteAddr := c.remoteAddr
+	mux := c.mux
+	recvID := c.recvID
+	finAckedChan := c.finAcked
+	c.mu.Unlock()
+
+	// Send ST_FIN
+	fin := &Packet{
+		Header: Header{
+			Type:    ST_FIN,
+			Version: 1,
+			ConnID:  sendID,
+			SeqNum:  finSeq,
+		},
+	}
+	data, err := fin.Encode()
+	if err != nil {
+		return err
+	}
+
+	_, err = mux.conn.WriteTo(data, remoteAddr)
+	if err != nil {
+		return err
+	}
+
+	// Wait for FIN-ACK
+	select {
+	case <-finAckedChan:
+		// Graceful close complete
+	case <-time.After(1 * time.Second):
+		// Timeout, force close
+		c.mu.Lock()
+		if c.state != STATE_CLOSED {
+			c.state = STATE_CLOSED
+			mux.DeregisterConn(recvID)
+			close(c.closeChan)
+		}
+		c.mu.Unlock()
+	}
+
 	return nil
 }
 

@@ -118,9 +118,11 @@ func (sm *SocketMux) readLoop() {
 					ack:        pkt.Header.SeqNum,
 					readBuf:    make(chan *Packet, 100),
 					closeChan:  make(chan struct{}),
+					finAcked:   make(chan struct{}, 1),
 				}
 
 				if err := sm.RegisterConn(recvID, c.readBuf); err == nil {
+					go c.run()
 					// Send SYN-ACK (ST_STATE)
 					synAck := &Packet{
 						Header: Header{
