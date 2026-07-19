@@ -17,7 +17,7 @@
     - [x] Verify codec tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Transport Interface & RPC Codec' (Protocol in workflow.md) [8edf658]
 
-## Phase 2: Kademlia Core — Routing & Request/Response Engine
+## Phase 2: Kademlia Core — Routing & Request/Response Engine [checkpoint: 25d087a]
 
 - [x] Task: Upgrade `RoutingTable` to K=20 bucket-size enforcement (TDD) [f52eba3]
     - [x] Write unit tests verifying K=20 limit per XOR-distance bucket and LRU eviction
@@ -27,7 +27,7 @@
     - [x] Write unit tests: send request, match response by transaction ID, timeout after 5s, concurrent safe
     - [x] Implement `pkg/dht/dispatcher.go` with a `sync.Map`-backed pending request table and goroutine-driven read loop
     - [x] Verify dispatcher tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Kademlia Core — Routing & Request/Response Engine' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Kademlia Core — Routing & Request/Response Engine' (Protocol in workflow.md) [25d087a]
 
 ## Phase 3: Bootstrap, Announce & Lookup
 
