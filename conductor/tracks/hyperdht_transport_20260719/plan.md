@@ -2,11 +2,11 @@
 
 ## Phase 1: Transport Interface & RPC Codec
 
-- [ ] Task: Define `Transport` Interface & `UDPTransport` (TDD)
-    - [ ] Write unit tests for `UDPTransport`: bind, send, receive, close lifecycle
-    - [ ] Define `Transport` interface with `ReadFrom`, `WriteTo`, `Close`, `Addr` methods in `pkg/dht/transport.go`
-    - [ ] Implement `UDPTransport` backed by `net.ListenPacket("udp", addr)`
-    - [ ] Verify transport tests pass
+- [x] Task: Define `Transport` Interface & `UDPTransport` (TDD) [155f2dd]
+    - [x] Write unit tests for `UDPTransport`: bind, send, receive, close lifecycle
+    - [x] Define `Transport` interface with `ReadFrom`, `WriteTo`, `Close`, `Addr` methods in `pkg/dht/transport.go`
+    - [x] Implement `UDPTransport` backed by `net.ListenPacket("udp", addr)`
+    - [x] Verify transport tests pass
 - [ ] Task: Implement `InProcessTransport` loopback stub (TDD)
     - [ ] Write unit tests verifying two `InProcessTransport` instances can exchange packets in-process
     - [ ] Implement `InProcessTransport` with `chan []byte` backing, connecting named endpoints
