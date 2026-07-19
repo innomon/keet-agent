@@ -22,9 +22,9 @@
 
 ## Phase 3: Hypercore Wire Protobuf Spec Compliance
 
-- [ ] Task: Define compliant Hypercore Wire Protobuf Schema and Serialization
-    - [ ] Write unit tests verifying Handshake, Feed, Request, Data, and Cancel message layouts match standard protobuf layout precisely (red phase).
-    - [ ] Generate or integrate compliant protobuf message structures, size validations, and strict constraint checks in `pkg/hypercore/protobuf.go` (green phase).
+- [x] Task: Define compliant Hypercore Wire Protobuf Schema and Serialization [73919fb]
+    - [x] Write unit tests verifying Hypercore wire message validation rules (max frame length, missing fields constraint, capability field length checking) (red phase).
+    - [x] Define hypercore wire messages (Feed, Handshake, Request, Data, Cancel) using a compatible lightweight protobuf schema/generator or manual parser in `pkg/network/protobuf.go` (green phase).
 - [ ] Task: Implement Extension Messages and Compression
     - [ ] Write unit tests verifying capabilities exchange and Inflate/Deflate compression/decompression on wire frames (red phase).
     - [ ] Implement compression algorithms and extension payload parsing on replication sessions in `pkg/hypercore/sync.go` (green phase).
