@@ -5,49 +5,106 @@ import (
 	"sync"
 )
 
+// Contact represents a known node on the Kademlia network.
 type Contact struct {
 	ID   [32]byte
 	Addr string
 }
 
+// RoutingTable implements K=20 bucket routing space for Kademlia.
 type RoutingTable struct {
-	localID  [32]byte
-	contacts []Contact
-	mu       sync.RWMutex
+	localID [32]byte
+	buckets [256][]Contact
+	mu      sync.RWMutex
 }
 
+// NewRoutingTable creates a new routing table for the specified local ID.
 func NewRoutingTable(localID [32]byte) *RoutingTable {
 	return &RoutingTable{
 		localID: localID,
 	}
 }
 
+func commonPrefixLength(id1, id2 [32]byte) int {
+	cpl := 0
+	for i := 0; i < 32; i++ {
+		xor := id1[i] ^ id2[i]
+		if xor == 0 {
+			cpl += 8
+			continue
+		}
+		for b := 7; b >= 0; b-- {
+			if (xor & (1 << b)) != 0 {
+				break
+			}
+			cpl++
+		}
+		break
+	}
+	if cpl > 255 {
+		return 255
+	}
+	return cpl
+}
+
+// AddContact inserts or updates a contact in the routing table, enforcing K=20 size limit and LRU eviction.
 func (rt *RoutingTable) AddContact(c Contact) {
+	if c.ID == rt.localID {
+		return // Do not add self
+	}
+
+	idx := commonPrefixLength(rt.localID, c.ID)
+
 	rt.mu.Lock()
 	defer rt.mu.Unlock()
 
-	// Check if already exists, update address if so
-	for i, existing := range rt.contacts {
+	bucket := rt.buckets[idx]
+
+	// Check if already exists
+	existsIdx := -1
+	for i, existing := range bucket {
 		if existing.ID == c.ID {
-			rt.contacts[i].Addr = c.Addr
-			return
+			existsIdx = i
+			break
 		}
 	}
 
-	rt.contacts = append(rt.contacts, c)
+	if existsIdx != -1 {
+		// Update address and move to the end of bucket (most recently seen)
+		if c.Addr != "" {
+			bucket[existsIdx].Addr = c.Addr
+		}
+		updatedContact := bucket[existsIdx]
+		bucket = append(bucket[:existsIdx], bucket[existsIdx+1:]...)
+		bucket = append(bucket, updatedContact)
+	} else {
+		// If bucket is full, evict the first element (least recently seen)
+		if len(bucket) >= 20 {
+			bucket = bucket[1:]
+		}
+		bucket = append(bucket, c)
+	}
+
+	rt.buckets[idx] = bucket
 }
 
+// FindClosestPeers searches for up to count closest contacts to target ID using XOR distance.
 func (rt *RoutingTable) FindClosestPeers(target [32]byte, count int) []Contact {
 	rt.mu.RLock()
 	defer rt.mu.RUnlock()
 
-	if len(rt.contacts) == 0 {
+	var allContacts []Contact
+	for _, bucket := range rt.buckets {
+		allContacts = append(allContacts, bucket...)
+	}
+
+	if len(allContacts) == 0 {
 		return nil
 	}
 
-	// Copy contacts to sort them
-	results := make([]Contact, len(rt.contacts))
-	copy(results, rt.contacts)
+	// Copy all contacts to sort them
+	results := make([]Contact, len(allContacts))
+	copy(results, allContacts)
 
 	sort.Slice(results, func(i, j int) bool {
 		d1 := xorDistance(results[i].ID, target)
