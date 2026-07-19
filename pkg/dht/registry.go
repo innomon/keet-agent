@@ -3,8 +3,9 @@ package dht
 import "sync"
 
 type SwarmRegistry struct {
-	mu     sync.RWMutex
-	swarms map[[32]byte][]string
+	mu             sync.RWMutex
+	swarms         map[[32]byte][]string
+	OnRegisterPeer func(topic [32]byte, peerAddr string)
 }
 
 func NewSwarmRegistry() *SwarmRegistry {
@@ -15,16 +16,24 @@ func NewSwarmRegistry() *SwarmRegistry {
 
 func (r *SwarmRegistry) RegisterPeer(topic [32]byte, peerAddr string) {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 
 	peers := r.swarms[topic]
+	exists := false
 	// Check if already registered
 	for _, p := range peers {
 		if p == peerAddr {
-			return
+			exists = true
+			break
 		}
 	}
-	r.swarms[topic] = append(peers, peerAddr)
+	if !exists {
+		r.swarms[topic] = append(peers, peerAddr)
+	}
+	r.mu.Unlock()
+
+	if !exists && r.OnRegisterPeer != nil {
+		r.OnRegisterPeer(topic, peerAddr)
+	}
 }
 
 func (r *SwarmRegistry) UnregisterPeer(topic [32]byte, peerAddr string) {

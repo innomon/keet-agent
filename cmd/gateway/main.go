@@ -108,6 +108,16 @@ func main() {
 	defer pm.Close()
 	cl.Infof("P2P Listener running at address: %s", pm.Addr().String())
 
+	// Wire Swarm Discovery to PeerManager Auto-Dialing
+	swarmRegistry.OnRegisterPeer = func(topic [32]byte, peerAddr string) {
+		cl.Infof("Discovered new swarm peer: %s. Dialing...", peerAddr)
+		go func() {
+			if err := pm.DialPeer(ctx, peerAddr); err != nil {
+				cl.Errorf("Failed to dial discovered swarm peer %s: %v", peerAddr, err)
+			}
+		}()
+	}
+
 	cl.Infof("ADK Communication Socket Ready at path: %s", cfg.SocketPath)
 
 	go func() {
