@@ -1,6 +1,7 @@
 package utp
 
 import (
+	"encoding/binary"
 	"errors"
 	"math/rand"
 	"net"
@@ -9,13 +10,15 @@ import (
 
 // SocketMux manages a single UDP socket, demultiplexing incoming packets to their respective connection queues.
 type SocketMux struct {
-	conn      net.PacketConn
-	conns     map[uint16]chan *Packet
-	listener  *UTPListener
-	mu        sync.RWMutex
-	closeChan chan struct{}
-	closeOnce sync.Once
-	wg        sync.WaitGroup
+	conn        net.PacketConn
+	conns       map[uint16]chan *Packet
+	listener    *UTPListener
+	mu          sync.RWMutex
+	closeChan   chan struct{}
+	closeOnce   sync.Once
+	wg          sync.WaitGroup
+	relayServer string
+	stunChan    chan []byte
 }
 
 // NewSocketMux creates a new SocketMux instance wrapping the provided PacketConn.
@@ -24,6 +27,7 @@ func NewSocketMux(conn net.PacketConn) *SocketMux {
 		conn:      conn,
 		conns:     make(map[uint16]chan *Packet),
 		closeChan: make(chan struct{}),
+		stunChan:  make(chan []byte, 100),
 	}
 }
 
@@ -76,6 +80,20 @@ func (sm *SocketMux) DeregisterListener() {
 	sm.listener = nil
 }
 
+// SetRelayServer sets the TURN relay server address.
+func (sm *SocketMux) SetRelayServer(addr string) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	sm.relayServer = addr
+}
+
+// GetRelayServer gets the TURN relay server address.
+func (sm *SocketMux) GetRelayServer() string {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	return sm.relayServer
+}
+
 func (sm *SocketMux) readLoop() {
 	defer sm.wg.Done()
 	buf := make([]byte, 65535)
@@ -90,7 +108,19 @@ func (sm *SocketMux) readLoop() {
 				return // connection closed, terminate loop
 			}
 
-			pkt, err := DecodePacket(buf[:n])
+			raw := buf[:n]
+			// Intercept STUN/TURN packets by checking STUN magic cookie
+			if len(raw) >= 8 && binary.BigEndian.Uint32(raw[4:8]) == stunMagicCookie {
+				cpy := make([]byte, len(raw))
+				copy(cpy, raw)
+				select {
+				case sm.stunChan <- cpy:
+				default:
+				}
+				continue
+			}
+
+			pkt, err := DecodePacket(raw)
 			if err != nil {
 				continue // ignore malformed packet
 			}

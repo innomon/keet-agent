@@ -146,3 +146,73 @@ func TestTURN_SendAndDataIndication(t *testing.T) {
 		t.Errorf("expected payload %q, got %q", string(payload), string(parsedPayload))
 	}
 }
+
+func TestTURN_ParseAllocateResponseErrors(t *testing.T) {
+	txID := [12]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
+
+	// 1. Packet too short
+	_, _, err := ParseTURNAllocateResponse([]byte{0, 1}, txID)
+	if err == nil {
+		t.Error("expected error for short packet")
+	}
+
+	// 2. Wrong message type
+	wrongType := []byte{0x00, 0x01, 0, 0, 0x21, 0x12, 0xa4, 0x42}
+	wrongType = append(wrongType, txID[:]...)
+	_, _, err = ParseTURNAllocateResponse(wrongType, txID)
+	if err == nil {
+		t.Error("expected error for wrong type")
+	}
+}
+
+func TestTURN_ParseDataIndicationErrors(t *testing.T) {
+	// 1. Indication too short
+	_, _, _, err := ParseTURNDataIndication([]byte{0, 1})
+	if err == nil {
+		t.Error("expected error for short packet")
+	}
+
+	// 2. Wrong message type
+	_, _, _, err = ParseTURNDataIndication(make([]byte, 20))
+	if err == nil {
+		t.Error("expected error for wrong type")
+	}
+}
+
+func TestTURN_ParseAllocateResponseIPv6(t *testing.T) {
+	txID := [12]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}
+	header := []byte{
+		0x01, 0x03, // Type: Allocate Success Response
+		0x00, 0x18, // Length: 24 bytes
+		0x21, 0x12, 0xa4, 0x42, // Cookie
+	}
+	header = append(header, txID[:]...)
+
+	// XOR-RELAYED-ADDRESS IPv6 (0x0016), Length (20)
+	attr := []byte{
+		0x00, 0x16, // Type
+		0x00, 0x14, // Length (20)
+		0x00, 0x02, // Reserved + Family (IPv6)
+		0x11, 0x2b, // X-Port
+		0x21, 0x12, 0xa4, 0x42, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+	}
+
+	response := append(header, attr...)
+
+	ip, port, err := ParseTURNAllocateResponse(response, txID)
+	if err != nil {
+		t.Fatalf("failed to parse IPv6 TURN response: %v", err)
+	}
+
+	expectedIP := "::"
+	if ip.String() != expectedIP {
+		t.Errorf("expected IP %s, got %s", expectedIP, ip.String())
+	}
+
+	expectedPort := 12345
+	if port != expectedPort {
+		t.Errorf("expected port %d, got %d", expectedPort, port)
+	}
+}
+
+

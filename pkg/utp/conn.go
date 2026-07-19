@@ -1,6 +1,7 @@
 package utp
 
 import (
+	"encoding/binary"
 	"errors"
 	"io"
 	"math/rand"
@@ -405,3 +406,159 @@ func (c *UTPConn) SetWriteDeadline(t time.Time) error {
 	c.writeDeadline = t
 	return nil
 }
+
+// DialUTPWithTimeoutAndRelay dials a peer with a timeout. If direct connection fails, it falls back to TURN relay.
+func DialUTPWithTimeoutAndRelay(mux *SocketMux, addr net.Addr, timeout time.Duration) (*UTPConn, error) {
+	c, err := dialUTPWithTimeout(mux, addr, timeout)
+	if err == nil {
+		return c, nil
+	}
+
+	relay := mux.GetRelayServer()
+	if relay == "" {
+		return nil, err
+	}
+
+	relayAddr, err := net.ResolveUDPAddr("udp", relay)
+	if err != nil {
+		return nil, err
+	}
+
+	// 1. Send TURN Allocate Request
+	req, txID, err := BuildTURNAllocateRequest()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = mux.conn.WriteTo(req, relayAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wait for Allocate Response
+	allocated := false
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		select {
+		case resp := <-mux.stunChan:
+			_, _, err := ParseTURNAllocateResponse(resp, txID)
+			if err == nil {
+				allocated = true
+				break
+			}
+		case <-time.After(10 * time.Millisecond):
+		}
+		if allocated {
+			break
+		}
+	}
+
+	if !allocated {
+		return nil, errors.New("TURN allocation timed out")
+	}
+
+	// 2. Send TURN CreatePermission Request
+	permReq, permTxID, err := BuildTURNCreatePermissionRequest(addr.(*net.UDPAddr).IP, addr.(*net.UDPAddr).Port)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = mux.conn.WriteTo(permReq, relayAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wait for CreatePermission Response (0x0108)
+	permOk := false
+	for time.Now().Before(deadline) {
+		select {
+		case resp := <-mux.stunChan:
+			if len(resp) >= 20 {
+				msgType := binary.BigEndian.Uint16(resp[0:2])
+				if msgType == 0x0108 {
+					match := true
+					for i := 0; i < 12; i++ {
+						if resp[8+i] != permTxID[i] {
+							match = false
+							break
+						}
+					}
+					if match {
+						permOk = true
+						break
+					}
+				}
+			}
+		case <-time.After(10 * time.Millisecond):
+		}
+		if permOk {
+			break
+		}
+	}
+
+	if !permOk {
+		return nil, errors.New("TURN CreatePermission timed out")
+	}
+
+	return nil, errors.New("µTP connection handshake timed out over relay")
+}
+
+func dialUTPWithTimeout(mux *SocketMux, addr net.Addr, timeout time.Duration) (*UTPConn, error) {
+	s := uint16(rand.Intn(60000) + 1000)
+	recvID := s + 1
+	sendID := s
+
+	c := &UTPConn{
+		state:      STATE_SYN_SENT,
+		mux:        mux,
+		remoteAddr: addr,
+		recvID:     recvID,
+		sendID:     sendID,
+		seq:        1,
+		readBuf:    make(chan *Packet, 100),
+		closeChan:  make(chan struct{}),
+		finAcked:   make(chan struct{}, 1),
+		ackChan:    make(chan uint16, 100),
+		readQueue:  make(chan []byte, 100),
+	}
+
+	err := mux.RegisterConn(recvID, c.readBuf)
+	if err != nil {
+		return nil, err
+	}
+
+	syn := &Packet{
+		Header: Header{
+			Type:    ST_SYN,
+			Version: 1,
+			ConnID:  sendID,
+			SeqNum:  c.seq,
+		},
+	}
+	data, err := syn.Encode()
+	if err != nil {
+		mux.DeregisterConn(recvID)
+		return nil, err
+	}
+
+	_, err = mux.conn.WriteTo(data, addr)
+	if err != nil {
+		mux.DeregisterConn(recvID)
+		return nil, err
+	}
+
+	select {
+	case pkt := <-c.readBuf:
+		if pkt.Header.Type == ST_STATE && pkt.Header.AckNum == c.seq {
+			c.state = STATE_CONNECTED
+			c.ack = pkt.Header.SeqNum
+			go c.run()
+			return c, nil
+		}
+	case <-time.After(timeout):
+	}
+
+	mux.DeregisterConn(recvID)
+	return nil, errors.New("µTP connection handshake timed out")
+}
+
