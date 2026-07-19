@@ -11,10 +11,10 @@
     - [x] Write unit tests verifying two `InProcessTransport` instances can exchange packets in-process
     - [x] Implement `InProcessTransport` with `chan []byte` backing, connecting named endpoints
     - [x] Verify stub transport tests pass
-- [ ] Task: Implement Kademlia RPC message codec (TDD)
-    - [ ] Write unit tests for encode/decode round-trips of all 7 message types: PING, PONG, FIND_NODE, FIND_NODE_RESP, ANNOUNCE, LOOKUP, LOOKUP_RESP
-    - [ ] Implement `pkg/dht/rpc.go` with binary-encoded RPC structs and a 4-byte transaction ID
-    - [ ] Verify codec tests pass
+- [x] Task: Implement Kademlia RPC message codec (TDD) [b9d1fb5]
+    - [x] Write unit tests for encode/decode round-trips of all 7 message types: PING, PONG, FIND_NODE, FIND_NODE_RESP, ANNOUNCE, LOOKUP, LOOKUP_RESP
+    - [x] Implement `pkg/dht/rpc.go` with binary-encoded RPC structs and a 4-byte transaction ID
+    - [x] Verify codec tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Transport Interface & RPC Codec' (Protocol in workflow.md)
 
 ## Phase 2: Kademlia Core — Routing & Request/Response Engine
