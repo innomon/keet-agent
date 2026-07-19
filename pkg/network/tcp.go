@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"strings"
 	"sync"
 
 	"github.com/innomon/keet-adk-gateway/pkg/crypto"
@@ -112,7 +113,12 @@ func (pm *PeerManager) handleIncoming(ctx context.Context, conn net.Conn) {
 	}()
 
 	if err := session.Run(ctx); err != nil {
-		slog.Error("Incoming sync session error", "peer", peerKey, "err", err)
+		errStr := err.Error()
+		if ctx.Err() != nil || strings.Contains(errStr, "use of closed network connection") || strings.Contains(errStr, "EOF") || strings.Contains(errStr, "connection reset by peer") {
+			slog.Debug("Incoming sync session stopped gracefully", "peer", peerKey, "err", err)
+		} else {
+			slog.Error("Incoming sync session error", "peer", peerKey, "err", err)
+		}
 	}
 }
 
@@ -143,7 +149,12 @@ func (pm *PeerManager) handleOutgoing(ctx context.Context, conn net.Conn) {
 	}()
 
 	if err := session.Run(ctx); err != nil {
-		slog.Error("Outgoing sync session error", "peer", peerKey, "err", err)
+		errStr := err.Error()
+		if ctx.Err() != nil || strings.Contains(errStr, "use of closed network connection") || strings.Contains(errStr, "EOF") || strings.Contains(errStr, "connection reset by peer") {
+			slog.Debug("Outgoing sync session stopped gracefully", "peer", peerKey, "err", err)
+		} else {
+			slog.Error("Outgoing sync session error", "peer", peerKey, "err", err)
+		}
 	}
 }
 
