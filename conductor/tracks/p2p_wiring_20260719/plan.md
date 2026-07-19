@@ -2,10 +2,10 @@
 
 ## Phase 1: Node Identity & P2P Listener Lifecycle
 
-- [ ] Task: Node Private Key Persistence (TDD)
-    - [ ] Write unit test for loading/saving node private key in `pkg/crypto`
-    - [ ] Implement `LoadOrGenerateNodeKey(storageDir string) (ed25519.PrivateKey, error)` in `pkg/crypto/keys.go`
-    - [ ] Verify key persistence tests pass
+- [x] Task: Node Private Key Persistence (TDD) (95dd289)
+    - [x] Write unit test for loading/saving node private key in `pkg/crypto`
+    - [x] Implement `LoadOrGenerateNodeKey(storageDir string) (ed25519.PrivateKey, error)` in `pkg/crypto/keys.go`
+    - [x] Verify key persistence tests pass
 - [ ] Task: Gateway Main Integration & TCP Listener (TDD)
     - [ ] Write integration test verifying gateway boots `PeerManager` with local key and tcp listener
     - [ ] Wire `PeerManager` initialization into `cmd/gateway/main.go` and start the TCP listener
