@@ -31,9 +31,9 @@
 - [x] Task: Implement LEDBAT Congestion Control [8e35476]
     - [x] Write unit tests verifying one-way delay calculation, base delay tracking, queuing delay calculation, and cwnd scaling (red phase).
     - [x] Implement LEDBAT congestion window calculation and window adjustments per incoming ACK in `pkg/utp/ledbat.go` (green phase).
-- [ ] Task: Implement net.Conn and net.Listener standard interfaces
-    - [ ] Write unit tests verifying standard `Read`/`Write` stream interface behavior, read/write deadlines, and concurrent call safety (red phase).
-    - [ ] Implement standard `net.Conn` and `net.Listener` methods on `UTPConn` and `UTPListener` (green phase).
+- [x] Task: Implement net.Conn and net.Listener standard interfaces [5c04dfa]
+    - [x] Write unit tests verifying standard `Read`/`Write` stream interface behavior, read/write deadlines, and concurrent call safety (red phase).
+    - [x] Implement standard `net.Conn` and `net.Listener` methods on `UTPConn` and `UTPListener` (green phase).
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Reliability, LEDBAT Congestion Control, and Flow Control' (Protocol in workflow.md)
 
 ## Phase 4: Swarming Integration and End-to-End Testing
