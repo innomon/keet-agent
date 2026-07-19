@@ -27,3 +27,6 @@
     - [x] Link `pm.OnAppendBlock` to `ipc.BroadcastChatMessage` inside `cmd/gateway/main.go`
     - [x] Verify end-to-end integration tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 3: P2P Socket Event Notification Integration' (Protocol in workflow.md)
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions (76f9772)
