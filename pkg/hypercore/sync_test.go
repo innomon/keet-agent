@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/binary"
 	"io"
 	"net"
 	"os"
@@ -186,3 +187,128 @@ func TestP2PSync_SessionReplication(t *testing.T) {
 		}
 	}
 }
+
+func TestSyncSession_NotifyHave(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to listen: %v", err)
+	}
+	defer listener.Close()
+
+	var connA, connB net.Conn
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		connB, _ = listener.Accept()
+	}()
+	go func() {
+		defer wg.Done()
+		connA, _ = net.Dial("tcp", listener.Addr().String())
+	}()
+	wg.Wait()
+	defer connA.Close()
+	defer connB.Close()
+
+	session := &SyncSession{
+		conn: connA,
+	}
+
+	err = session.NotifyHave(42)
+	if err != nil {
+		t.Errorf("NotifyHave failed: %v", err)
+	}
+
+	buf := make([]byte, 1024)
+	n, err := connB.Read(buf)
+	if err != nil {
+		t.Fatalf("failed to read from connection: %v", err)
+	}
+	if n < 4 {
+		t.Fatalf("expected at least 4 bytes of length prefix")
+	}
+
+	length := binary.BigEndian.Uint32(buf[0:4])
+	if int(length) != n-4 {
+		t.Errorf("length prefix mismatch: %d vs %d", length, n-4)
+	}
+
+	decoded, err := DecodeHave(buf[4:n])
+	if err != nil {
+		t.Fatalf("failed to decode Have: %v", err)
+	}
+
+	if decoded.Len != 42 {
+		t.Errorf("expected length 42, got %d", decoded.Len)
+	}
+}
+
+func TestSyncSession_ReadLoopErrors(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to listen: %v", err)
+	}
+	defer listener.Close()
+
+	var connA, connB net.Conn
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		connB, _ = listener.Accept()
+	}()
+	go func() {
+		defer wg.Done()
+		connA, _ = net.Dial("tcp", listener.Addr().String())
+	}()
+	wg.Wait()
+	defer connA.Close()
+	defer connB.Close()
+
+	session := &SyncSession{
+		conn: connA,
+	}
+
+	// 1. Send malformed message of type 2 (Have) to trigger DecodeHave error
+	go func() {
+		binary.Write(connB, binary.BigEndian, uint32(5))
+		connB.Write([]byte{2, 1, 2, 3, 4})
+	}()
+
+	err = session.readLoop(context.Background())
+	if err == nil {
+		t.Error("expected error from readLoop for malformed Have")
+	}
+
+	// 2. Send malformed message of type 3 (Want)
+	go func() {
+		binary.Write(connB, binary.BigEndian, uint32(5))
+		connB.Write([]byte{3, 1, 2, 3, 4})
+	}()
+	err = session.readLoop(context.Background())
+	if err == nil {
+		t.Error("expected error from readLoop for malformed Want")
+	}
+
+	// 3. Send malformed message of type 4 (Request)
+	go func() {
+		binary.Write(connB, binary.BigEndian, uint32(5))
+		connB.Write([]byte{4, 1, 2, 3, 4})
+	}()
+	err = session.readLoop(context.Background())
+	if err == nil {
+		t.Error("expected error from readLoop for malformed Request")
+	}
+
+	// 4. Send malformed message of type 5 (Data)
+	go func() {
+		binary.Write(connB, binary.BigEndian, uint32(5))
+		connB.Write([]byte{5, 1, 2, 3, 4})
+	}()
+	err = session.readLoop(context.Background())
+	if err == nil {
+		t.Error("expected error from readLoop for malformed Data")
+	}
+}
+
+

@@ -8,8 +8,9 @@ import (
 )
 
 type Handshake struct {
-	Protocol string
-	Key      []byte
+	Protocol   string
+	Key        []byte
+	Extensions []string
 }
 
 type Have struct {
@@ -91,6 +92,14 @@ func EncodeHandshake(m *Handshake) ([]byte, error) {
 	if err := writeBytes(&buf, m.Key); err != nil {
 		return nil, err
 	}
+	if err := binary.Write(&buf, binary.BigEndian, uint32(len(m.Extensions))); err != nil {
+		return nil, err
+	}
+	for _, ext := range m.Extensions {
+		if err := writeString(&buf, ext); err != nil {
+			return nil, err
+		}
+	}
 	return buf.Bytes(), nil
 }
 
@@ -107,7 +116,18 @@ func DecodeHandshake(b []byte) (*Handshake, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Handshake{Protocol: protocol, Key: key}, nil
+	var extLen uint32
+	var extensions []string
+	if binary.Read(r, binary.BigEndian, &extLen) == nil {
+		for i := uint32(0); i < extLen; i++ {
+			ext, err := readString(r)
+			if err != nil {
+				return nil, err
+			}
+			extensions = append(extensions, ext)
+		}
+	}
+	return &Handshake{Protocol: protocol, Key: key, Extensions: extensions}, nil
 }
 
 func EncodeHave(m *Have) ([]byte, error) {

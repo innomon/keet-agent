@@ -121,3 +121,40 @@ func TestWire_Data(t *testing.T) {
 		t.Errorf("expected signature %v, got %v", msg.Signature, decoded.Signature)
 	}
 }
+
+func TestWire_DecodeErrors(t *testing.T) {
+	// 1. Invalid message type on DecodeHandshake
+	if _, err := DecodeHandshake([]byte{99}); err == nil {
+		t.Error("expected error for wrong type in handshake")
+	}
+
+	// 2. Invalid Have type
+	if _, err := DecodeHave([]byte{99}); err == nil {
+		t.Error("expected error for wrong type in Have")
+	}
+
+	// 3. Invalid Want type
+	if _, err := DecodeWant([]byte{99}); err == nil {
+		t.Error("expected error for wrong type in Want")
+	}
+
+	// 4. Invalid Request type
+	if _, err := DecodeRequest([]byte{99}); err == nil {
+		t.Error("expected error for wrong type in Request")
+	}
+
+	// 5. Invalid Data type
+	if _, err := DecodeData([]byte{99}); err == nil {
+		t.Error("expected error for wrong type in Data")
+	}
+}
+
+func TestWire_ReadStringBytesSafetyLimits(t *testing.T) {
+	// Handshake header: type 0 (1 byte)
+	// Protocol string size: 15MB (0x00F00000) (4 bytes)
+	largeLength := []byte{0, 0x00, 0xf0, 0x00, 0x00}
+	if _, err := DecodeHandshake(largeLength); err == nil {
+		t.Error("expected safety limit error for large protocol string")
+	}
+}
+

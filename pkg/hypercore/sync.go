@@ -16,15 +16,16 @@ import (
 )
 
 type SyncSession struct {
-	conn        net.Conn
-	storage     *Storage
-	blockRepo   *db.BlockRepository
-	feedKey     string
-	remotePub   ed25519.PublicKey
-	localPriv   ed25519.PrivateKey
-	isInitiator bool
-	writeMu     sync.Mutex
+	conn          net.Conn
+	storage       *Storage
+	blockRepo     *db.BlockRepository
+	feedKey       string
+	remotePub     ed25519.PublicKey
+	localPriv     ed25519.PrivateKey
+	isInitiator   bool
+	writeMu       sync.Mutex
 	OnAppendBlock func(index uint64, value []byte)
+	deflateActive bool
 }
 
 func NewSyncSession(conn net.Conn, storage *Storage, blockRepo *db.BlockRepository, feedKey string, localPriv ed25519.PrivateKey, remotePub ed25519.PublicKey, isInitiator bool) *SyncSession {
@@ -54,8 +55,9 @@ func (s *SyncSession) NotifyHave(length uint64) error {
 func (s *SyncSession) Run(ctx context.Context) error {
 	// 1. Send Handshake
 	localHandshake := &Handshake{
-		Protocol: "hypercore/v10",
-		Key:      []byte(s.feedKey),
+		Protocol:   "hypercore/v10",
+		Key:        []byte(s.feedKey),
+		Extensions: []string{"deflate"},
 	}
 	hb, err := EncodeHandshake(localHandshake)
 	if err != nil {
@@ -77,6 +79,15 @@ func (s *SyncSession) Run(ctx context.Context) error {
 	if remoteHandshake.Protocol != "hypercore/v10" {
 		return fmt.Errorf("unsupported remote protocol: %q", remoteHandshake.Protocol)
 	}
+
+	// Negotiate extensions
+	shared := NegotiateExtensions(localHandshake.Extensions, remoteHandshake.Extensions)
+	for _, ext := range shared {
+		if ext == "deflate" {
+			s.deflateActive = true
+		}
+	}
+
 
 	// 3. Exchange Have & Want
 	localLen := s.storage.Len()
@@ -191,6 +202,19 @@ func (s *SyncSession) readLoop(ctx context.Context) error {
 					return fmt.Errorf("decode data: %w", err)
 				}
 
+				if s.deflateActive && len(dataMsg.Value) > 0 {
+					isCompressed := dataMsg.Value[0]
+					if isCompressed == 1 {
+						decompressed, err := DecompressBlock(dataMsg.Value[1:])
+						if err != nil {
+							return fmt.Errorf("decompress block: %w", err)
+						}
+						dataMsg.Value = decompressed
+					} else if isCompressed == 0 {
+						dataMsg.Value = dataMsg.Value[1:]
+					}
+				}
+
 				// Only append if it's the next expected block index
 				expectedIndex := s.storage.Len()
 				if dataMsg.Index == expectedIndex {
@@ -262,9 +286,19 @@ func (s *SyncSession) sendBlockData(ctx context.Context, index uint64) error {
 		signature = SignRootHash(s.localPriv, rootHash)
 	}
 
+	valToSend := value
+	if s.deflateActive && len(value) > 10 {
+		compressed, err := CompressBlock(value)
+		if err == nil {
+			valToSend = append([]byte{1}, compressed...)
+		}
+	} else if s.deflateActive {
+		valToSend = append([]byte{0}, value...)
+	}
+
 	dataMsg := &Data{
 		Index:     index,
-		Value:     value,
+		Value:     valToSend,
 		Signature: signature,
 	}
 	dataBytes, err := EncodeData(dataMsg)

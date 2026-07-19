@@ -101,3 +101,18 @@ func TestStorage_Persistence(t *testing.T) {
 		t.Errorf("expected %q, got %q", string(block), string(b))
 	}
 }
+
+func TestStorage_InvalidPath(t *testing.T) {
+	tempFile, err := os.CreateTemp("", "hypercore_temp_file")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	defer os.Remove(tempFile.Name())
+	tempFile.Close()
+
+	_, err = NewStorage(tempFile.Name())
+	if err == nil {
+		t.Error("expected error opening storage on a file, got nil")
+	}
+}
+
