@@ -39,6 +39,10 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Implement HyperDHT network transport**
+- [~] **Track: Implement HyperDHT network transport**
   *Link: [./tracks/hyperdht_transport_20260719/](./tracks/hyperdht_transport_20260719/)*
 
+---
+
+- [ ] **Track: UTP/µTP reliable transport over UDP (Holepunch's actual production layer)**
+*Link: [./tracks/utp_transport_20260719/](./tracks/utp_transport_20260719/)*
