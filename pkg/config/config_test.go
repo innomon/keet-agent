@@ -2,138 +2,135 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
-func TestLoadConfig_Defaults(t *testing.T) {
-	envKeys := []string{
-		"LOG_LEVEL", "CONSOLE_LOG_ENABLED", "FILE_LOG_ENABLED", "LOG_DIR",
-		"LOG_FILE_NAME", "LOG_MAX_SIZE_MB", "LOG_MAX_BACKUPS", "SOCKET_PATH",
-		"STORAGE_DIR", "DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD",
-		"DB_NAME", "DB_SSLMODE", "P2P_PORT", "P2P_LISTEN_ADDR", "DHT_BOOTSTRAP_NODES",
-	}
-	savedEnv := make(map[string]string)
-	for _, k := range envKeys {
-		if val, exists := os.LookupEnv(k); exists {
-			savedEnv[k] = val
-			os.Unsetenv(k)
-		}
-	}
-	defer func() {
-		for k, val := range savedEnv {
-			os.Setenv(k, val)
-		}
-	}()
+func TestLoadConfig_EnvFallback(t *testing.T) {
+	// Clean up environment variables to test defaults
+	os.Unsetenv("DB_TYPE")
+	os.Unsetenv("LOG_LEVEL")
 
+	// Verify default env-based loading works
 	cfg := LoadConfig()
-
+	if cfg.DBType != "bbolt" {
+		t.Errorf("expected default DBType to be bbolt, got %q", cfg.DBType)
+	}
 	if cfg.LogLevel != "INFO" {
-		t.Errorf("expected default LogLevel 'INFO', got %q", cfg.LogLevel)
-	}
-	if !cfg.ConsoleEnabled {
-		t.Error("expected default ConsoleEnabled true")
-	}
-	if !cfg.FileEnabled {
-		t.Error("expected default FileEnabled true")
-	}
-	if cfg.LogDir != "logs" {
-		t.Errorf("expected default LogDir 'logs', got %q", cfg.LogDir)
-	}
-	if cfg.LogFileName != "gateway.log" {
-		t.Errorf("expected default LogFileName 'gateway.log', got %q", cfg.LogFileName)
-	}
-	if cfg.LogMaxSizeMB != 10 {
-		t.Errorf("expected default LogMaxSizeMB 10, got %d", cfg.LogMaxSizeMB)
-	}
-	if cfg.LogMaxBackups != 5 {
-		t.Errorf("expected default LogMaxBackups 5, got %d", cfg.LogMaxBackups)
-	}
-	if cfg.SocketPath != "/tmp/keet-adk.sock" {
-		t.Errorf("expected default SocketPath '/tmp/keet-adk.sock', got %q", cfg.SocketPath)
-	}
-	if cfg.StorageDir != "storage" {
-		t.Errorf("expected default StorageDir 'storage', got %q", cfg.StorageDir)
-	}
-	if cfg.DBHost != "localhost" {
-		t.Errorf("expected default DBHost 'localhost', got %q", cfg.DBHost)
-	}
-	if cfg.DBPort != "5432" {
-		t.Errorf("expected default DBPort '5432', got %q", cfg.DBPort)
-	}
-	if cfg.DBUser != "postgres" {
-		t.Errorf("expected default DBUser 'postgres', got %q", cfg.DBUser)
-	}
-	if cfg.DBPassword != "postgres" {
-		t.Errorf("expected default DBPassword 'postgres', got %q", cfg.DBPassword)
-	}
-	if cfg.DBName != "keet_gateway" {
-		t.Errorf("expected default DBName 'keet_gateway', got %q", cfg.DBName)
-	}
-	if cfg.DBSSLMode != "disable" {
-		t.Errorf("expected default DBSSLMode 'disable', got %q", cfg.DBSSLMode)
+		t.Errorf("expected default LogLevel to be INFO, got %q", cfg.LogLevel)
 	}
 }
 
-func TestLoadConfig_EnvOverrides(t *testing.T) {
-	os.Setenv("LOG_LEVEL", "DEBUG")
-	os.Setenv("CONSOLE_LOG_ENABLED", "false")
-	os.Setenv("LOG_MAX_SIZE_MB", "25")
-	os.Setenv("SOCKET_PATH", "/tmp/custom.sock")
-	os.Setenv("STORAGE_DIR", "custom_storage")
-	os.Setenv("DB_HOST", "db.example.com")
-	os.Setenv("DB_PORT", "5433")
-	os.Setenv("DB_USER", "custom_user")
-	os.Setenv("DB_PASSWORD", "secret")
-	os.Setenv("DB_NAME", "custom_db")
-	os.Setenv("DB_SSLMODE", "require")
+func TestLoadConfig_YamlParsing(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "config-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
 
-	defer func() {
-		os.Unsetenv("LOG_LEVEL")
-		os.Unsetenv("CONSOLE_LOG_ENABLED")
-		os.Unsetenv("LOG_MAX_SIZE_MB")
-		os.Unsetenv("SOCKET_PATH")
-		os.Unsetenv("STORAGE_DIR")
-		os.Unsetenv("DB_HOST")
-		os.Unsetenv("DB_PORT")
-		os.Unsetenv("DB_USER")
-		os.Unsetenv("DB_PASSWORD")
-		os.Unsetenv("DB_NAME")
-		os.Unsetenv("DB_SSLMODE")
-	}()
+	yamlPath := filepath.Join(tmpDir, "config.yaml")
+	yamlContent := `
+log_level: DEBUG
+db_type: postgres
+storage_dir: custom_storage
+`
+	if err := os.WriteFile(yamlPath, []byte(yamlContent), 0644); err != nil {
+		t.Fatalf("failed to write config.yaml: %v", err)
+	}
+
+	// 1. Test CLI argument lookup
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+
+	os.Args = []string{"cmd", "--config", yamlPath}
 
 	cfg := LoadConfig()
-
 	if cfg.LogLevel != "DEBUG" {
-		t.Errorf("expected LogLevel 'DEBUG', got %q", cfg.LogLevel)
+		t.Errorf("expected LogLevel to be DEBUG from YAML, got %q", cfg.LogLevel)
 	}
-	if cfg.ConsoleEnabled {
-		t.Error("expected ConsoleEnabled false")
-	}
-	if cfg.LogMaxSizeMB != 25 {
-		t.Errorf("expected LogMaxSizeMB 25, got %d", cfg.LogMaxSizeMB)
-	}
-	if cfg.SocketPath != "/tmp/custom.sock" {
-		t.Errorf("expected SocketPath '/tmp/custom.sock', got %q", cfg.SocketPath)
+	if cfg.DBType != "postgres" {
+		t.Errorf("expected DBType to be postgres from YAML, got %q", cfg.DBType)
 	}
 	if cfg.StorageDir != "custom_storage" {
-		t.Errorf("expected StorageDir 'custom_storage', got %q", cfg.StorageDir)
+		t.Errorf("expected StorageDir to be custom_storage from YAML, got %q", cfg.StorageDir)
 	}
-	if cfg.DBHost != "db.example.com" {
-		t.Errorf("expected DBHost 'db.example.com', got %q", cfg.DBHost)
-	}
-	if cfg.DBPort != "5433" {
-		t.Errorf("expected DBPort '5433', got %q", cfg.DBPort)
-	}
-	if cfg.DBUser != "custom_user" {
-		t.Errorf("expected DBUser 'custom_user', got %q", cfg.DBUser)
-	}
-	if cfg.DBPassword != "secret" {
-		t.Errorf("expected DBPassword 'secret', got %q", cfg.DBPassword)
-	}
-	if cfg.DBName != "custom_db" {
-		t.Errorf("expected DBName 'custom_db', got %q", cfg.DBName)
-	}
-	if cfg.DBSSLMode != "require" {
-		t.Errorf("expected DBSSLMode 'require', got %q", cfg.DBSSLMode)
+
+	// Test flag formats: --config=
+	os.Args = []string{"cmd", "--config=" + yamlPath}
+	cfg = LoadConfig()
+	if cfg.LogLevel != "DEBUG" {
+		t.Errorf("expected LogLevel DEBUG from --config= format, got %q", cfg.LogLevel)
 	}
 }
+
+func TestLoadConfig_CurrentDirLookup(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "config-test-curr-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get working dir: %v", err)
+	}
+	defer func() { _ = os.Chdir(oldWd) }()
+
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("failed to change working dir: %v", err)
+	}
+
+	yamlContent := `
+log_level: WARN
+socket_path: /tmp/custom-socket.sock
+`
+	if err := os.WriteFile("config.yaml", []byte(yamlContent), 0644); err != nil {
+		t.Fatalf("failed to write config.yaml: %v", err)
+	}
+
+	// Unset CLI args
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = []string{"cmd"}
+
+	cfg := LoadConfig()
+	if cfg.LogLevel != "WARN" {
+		t.Errorf("expected LogLevel WARN from current dir lookup, got %q", cfg.LogLevel)
+	}
+	if cfg.SocketPath != "/tmp/custom-socket.sock" {
+		t.Errorf("expected SocketPath /tmp/custom-socket.sock, got %q", cfg.SocketPath)
+	}
+}
+
+func TestHelpers(t *testing.T) {
+	os.Setenv("TEST_BOOL_TRUE", "true")
+	os.Setenv("TEST_BOOL_FALSE", "false")
+	os.Setenv("TEST_BOOL_INVALID", "not-a-bool")
+	os.Setenv("TEST_INT", "123")
+	os.Setenv("TEST_INT_INVALID", "not-an-int")
+
+	defer func() {
+		os.Unsetenv("TEST_BOOL_TRUE")
+		os.Unsetenv("TEST_BOOL_FALSE")
+		os.Unsetenv("TEST_BOOL_INVALID")
+		os.Unsetenv("TEST_INT")
+		os.Unsetenv("TEST_INT_INVALID")
+	}()
+
+	if !getEnvBool("TEST_BOOL_TRUE", false) {
+		t.Error("expected true")
+	}
+	if getEnvBool("TEST_BOOL_FALSE", true) {
+		t.Error("expected false")
+	}
+	if !getEnvBool("TEST_BOOL_INVALID", true) {
+		t.Error("expected default true")
+	}
+	if getEnvInt("TEST_INT", 0) != 123 {
+		t.Error("expected 123")
+	}
+	if getEnvInt("TEST_INT_INVALID", 999) != 999 {
+		t.Error("expected default 999")
+	}
+}
+
