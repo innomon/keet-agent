@@ -10,7 +10,7 @@
     - [x] Implement `pkg/utp/simulator.go` wrapping UDP PacketConn to simulate lossy networks (green phase).
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Packet Protocol and Simulation Layer' (Protocol in workflow.md) [e9c44fc]
 
-## Phase 2: Connection Management and State Machine
+## Phase 2: Connection Management and State Machine [checkpoint: 47f70ee]
 
 - [x] Task: Implement Socket Multiplexer (SocketMux) [4204631]
     - [x] Write unit tests verifying UDP packet demultiplexing to correct connections by source address and Connection ID (red phase).
@@ -21,7 +21,7 @@
 - [x] Task: Implement Connection Teardown [ffd7d69]
     - [x] Write unit tests verifying FIN handshakes, ACK confirmation, and RST cleanup flows (red phase).
     - [x] Implement connection termination logic and connection map cleanup (green phase).
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Connection Management and State Machine' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Connection Management and State Machine' (Protocol in workflow.md) [47f70ee]
 
 ## Phase 3: Reliability, LEDBAT Congestion Control, and Flow Control
 
