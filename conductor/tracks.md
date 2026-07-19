@@ -44,5 +44,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: UTP/µTP reliable transport over UDP (Holepunch's actual production layer)**
+- [~] **Track: UTP/µTP reliable transport over UDP (Holepunch's actual production layer)**
 *Link: [./tracks/utp_transport_20260719/](./tracks/utp_transport_20260719/)*
