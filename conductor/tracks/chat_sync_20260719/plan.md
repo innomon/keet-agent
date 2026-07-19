@@ -12,10 +12,10 @@ This plan outlines the steps to implement JSON chat message serialization, autom
 
 ## Phase 2: Live Sync Replication Event Trigger
 
-- [ ] Task: P2P Auto-Sync Triggers (TDD)
-    - [ ] Write integration tests for real-time replication propagation between connected PeerManagers
-    - [ ] Modify `SyncSession` and `PeerManager` to automatically trigger `Have`/`Request` updates when new blocks are local or remote
-    - [ ] Verify P2P auto-sync propagation tests pass
+- [x] Task: P2P Auto-Sync Triggers (TDD) (8201a97)
+    - [x] Write integration tests for real-time replication propagation between connected PeerManagers
+    - [x] Modify `SyncSession` and `PeerManager` to automatically trigger `Have`/`Request` updates when new blocks are local or remote
+    - [x] Verify P2P auto-sync propagation tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Live Sync Replication Event Trigger' (Protocol in workflow.md)
 
 ## Phase 3: IPC Notification Broadcasting
