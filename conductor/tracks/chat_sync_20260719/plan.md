@@ -20,9 +20,9 @@ This plan outlines the steps to implement JSON chat message serialization, autom
 
 ## Phase 3: IPC Notification Broadcasting
 
-- [ ] Task: Gateway IPC Broadcast Event Loop (TDD)
-    - [ ] Write integration tests verifying local JSON-RPC socket notifications upon P2P block arrival
-    - [ ] Implement active socket connection broadcast registry in `pkg/ipc/socket.go`
-    - [ ] Ingest new block events into the IPC broadcaster, publishing asynchronous frame updates to ADK clients
-    - [ ] Verify IPC socket broadcast tests pass
+- [x] Task: Gateway IPC Broadcast Event Loop (TDD) (4c8b2d5)
+    - [x] Write integration tests verifying local JSON-RPC socket notifications upon P2P block arrival
+    - [x] Implement active socket connection broadcast registry in `pkg/ipc/socket.go`
+    - [x] Ingest new block events into the IPC broadcaster, publishing asynchronous frame updates to ADK clients
+    - [x] Verify IPC socket broadcast tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: IPC Notification Broadcasting' (Protocol in workflow.md)
