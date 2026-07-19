@@ -18,11 +18,11 @@ This plan outlines the steps to implement JSON chat message serialization, autom
     - [x] Verify P2P auto-sync propagation tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Live Sync Replication Event Trigger' (Protocol in workflow.md)
 
-## Phase 3: IPC Notification Broadcasting
+## Phase 3: IPC Notification Broadcasting [checkpoint: 1aa9623]
 
 - [x] Task: Gateway IPC Broadcast Event Loop (TDD) (4c8b2d5)
     - [x] Write integration tests verifying local JSON-RPC socket notifications upon P2P block arrival
     - [x] Implement active socket connection broadcast registry in `pkg/ipc/socket.go`
     - [x] Ingest new block events into the IPC broadcaster, publishing asynchronous frame updates to ADK clients
     - [x] Verify IPC socket broadcast tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: IPC Notification Broadcasting' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: IPC Notification Broadcasting' (Protocol in workflow.md)
