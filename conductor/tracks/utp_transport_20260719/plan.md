@@ -28,9 +28,9 @@
 - [x] Task: Implement Reliable Data Transfer and Window Management [be334e9]
     - [x] Write unit tests verifying packet ACK matching, duplicate ACK count, Fast Retransmit, and Retransmission Timeout (RTO) calculations (red phase).
     - [x] Implement sequence buffers, retransmission queues, and acknowledgment logic in `pkg/utp/reliability.go` (green phase).
-- [ ] Task: Implement LEDBAT Congestion Control
-    - [ ] Write unit tests verifying one-way delay calculation, base delay tracking, queuing delay calculation, and cwnd scaling (red phase).
-    - [ ] Implement LEDBAT congestion window calculation and window adjustments per incoming ACK in `pkg/utp/ledbat.go` (green phase).
+- [x] Task: Implement LEDBAT Congestion Control [8e35476]
+    - [x] Write unit tests verifying one-way delay calculation, base delay tracking, queuing delay calculation, and cwnd scaling (red phase).
+    - [x] Implement LEDBAT congestion window calculation and window adjustments per incoming ACK in `pkg/utp/ledbat.go` (green phase).
 - [ ] Task: Implement net.Conn and net.Listener standard interfaces
     - [ ] Write unit tests verifying standard `Read`/`Write` stream interface behavior, read/write deadlines, and concurrent call safety (red phase).
     - [ ] Implement standard `net.Conn` and `net.Listener` methods on `UTPConn` and `UTPListener` (green phase).
