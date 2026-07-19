@@ -1,6 +1,6 @@
 # Implementation Plan: Implement Production P2P Gateway Wiring
 
-## Phase 1: Node Identity & P2P Listener Lifecycle
+## Phase 1: Node Identity & P2P Listener Lifecycle [checkpoint: baa3b64]
 
 - [x] Task: Node Private Key Persistence (TDD) (95dd289)
     - [x] Write unit test for loading/saving node private key in `pkg/crypto`
@@ -10,7 +10,7 @@
     - [x] Write integration test verifying gateway boots `PeerManager` with local key and tcp listener
     - [x] Wire `PeerManager` initialization into `cmd/gateway/main.go` and start the TCP listener
     - [x] Verify listener tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Node Identity & P2P Listener Lifecycle' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Node Identity & P2P Listener Lifecycle' (Protocol in workflow.md)
 
 ## Phase 2: DHT Peer Discovery Auto-Dialing
 
