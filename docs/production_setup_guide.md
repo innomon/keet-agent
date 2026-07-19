@@ -7,17 +7,17 @@ This guide describes how to configure, run, and secure the Keet ADK Gateway on a
    ```bash
    ./agentic -webui -a2a -host=192.168.1.10
    ```
-   and listens over an HTTP port using the open `adk.dev` ADK protocol specification.
-4. The **Keet ADK Gateway acts as an HTTP bridge / chat client proxy**, bridging incoming P2P blocks replicated from the mobile client, forwarding them to the local `agentic` HTTP server, and appending responses back to the Hypercore feed for synchronization.
-5. The **Keet Mobile App runs on the public Internet**, communicating with the RPi5 gateway securely and peer-to-peer via DHT swarm orchestration and uTP NAT holepunching.
+   and listens on an HTTP port using the open `adk.dev` ADK protocol specification.
+4. The **Keet ADK Gateway acts as a chat proxy and ADK.dev protocol client**, connecting to `agentic`'s HTTP endpoint. It acts as a standard peer in the chat swarm room, transparently proxying messages between the Keet Mobile app and the `agentic` service.
+5. The **Keet Mobile App runs on the public Internet**, communicating with the RPi5 gateway securely and peer-to-peer via DHT swarm orchestration and uTP NAT holepunching. To the mobile app, it is as if it is communicating with another standard Keet mobile client.
 
-No public port forwarding or dynamic DNS is required for the client-gateway connection!
+No public port forwarding, dynamic DNS, or local IPC socket listeners are required for the agent-to-mobile communication!
 
 ---
 
 ## 1. Production Architecture Topology
 
-Instead of exposing an IPC socket to the public network, the gateway uses the strength of decentralized peer-to-peer protocols (DHT + uTP + Hypercore) to bridge firewalls, acting as a secure gateway proxy to your local HTTP `agentic` instances.
+Instead of exposing any socket interface to the public network, the gateway uses the strength of decentralized peer-to-peer protocols (DHT + uTP + Hypercore) to bridge firewalls, acting as a secure gateway proxy to your local HTTP `agentic` instances.
 
 ```
 +------------------------------------------+                 +------------------------------+
@@ -27,11 +27,11 @@ Instead of exposing an IPC socket to the public network, the gateway uses the st
 |  +------------------------------------+  |                 |                              |
 |  | agentic                            |  |                 |                              |
 |  | (http://192.168.1.10:8080/chat)    |  |                 |                              |
-|  +----------------+-------------------+  |                 |                              |
+|  +------------------------------------+  |                 |                              |
 |                   ^                      |                 |                              |
 |                   | HTTP POST (adk.dev)  |                 |                              |
 |                   v                      |                 |                              |
-|  +----------------+-------------------+  |  Holepunching   |  +------------------------+  |
+|  +------------------------------------+  |  Holepunching   |  +------------------------+  |
 |  |        Keet ADK Gateway            |<-+================>|  |     Keet Mobile App    |  |
 |  | (DHT Node / uTP Sync / BBolt Cache) |  |   uTP Sync /    |  | (P2P Node on 4G/5G/WAN)|  |
 |  +------------------------------------+  |  DHT Swarm Room |  +------------------------+  |
@@ -41,13 +41,13 @@ Instead of exposing an IPC socket to the public network, the gateway uses the st
 ### Operational Workflow:
 1. The **Keet ADK Gateway** on the RPi5 runs locally and announces a unique DHT swarm room topic.
 2. The **Keet Mobile App** (on WAN/Cellular) joins the same DHT swarm room topic.
-3. The built-in DHT Node (`pkg/dht`) and NAT holepunch protocol (`pkg/utp`) resolve paths through firewalls to establish a direct uTP stream connection.
+3. The built-in DHT Node (`pkg/dht`) and NAT holepunch protocol (`pkg/utp`) resolve paths through firewalls to establish a direct uTP stream connection. To the mobile app, the gateway appears as another normal Keet peer.
 4. When a user sends a message on the mobile app, it replicates automatically to the RPi5's local Hypercore feed over uTP.
 5. The gateway's `OnAppendBlock` replication hook intercepts the block, parses the JSON chat payload, and proxies a **JSON HTTP POST** request to your locally running `agentic` service (`http://192.168.1.10:8080`):
    ```json
    {
      "sender": "012345...",
-     "content": "Hello Agentic!",
+     "content": "Hello Agent!",
      "feed_key": "default_feed"
    }
    ```
@@ -75,9 +75,6 @@ file_log_enabled: true
 # database settings (Pure Go BBolt is default and recommended for RPi5)
 db_type: bbolt
 bbolt_path: storage/gateway.db
-
-# IPC socket path for local agentic loopback connection
-socket_path: /tmp/keet-adk.sock
 
 # Agentic HTTP Bridge Proxy URL (ADK Protocol endpoint)
 agentic_url: http://192.168.1.10:8080/api/v1/chat
