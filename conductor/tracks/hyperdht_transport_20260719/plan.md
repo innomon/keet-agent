@@ -23,10 +23,10 @@
     - [x] Write unit tests verifying K=20 limit per XOR-distance bucket and LRU eviction
     - [x] Update `pkg/dht/routing.go` to use per-bucket slices capped at K=20 with LRU eviction of least-recently-seen contacts
     - [x] Verify routing table tests pass
-- [ ] Task: Implement RPC dispatcher & pending-request correlation map (TDD)
-    - [ ] Write unit tests: send request, match response by transaction ID, timeout after 5s, concurrent safe
-    - [ ] Implement `pkg/dht/dispatcher.go` with a `sync.Map`-backed pending request table and goroutine-driven read loop
-    - [ ] Verify dispatcher tests pass
+- [x] Task: Implement RPC dispatcher & pending-request correlation map (TDD) [56f3505]
+    - [x] Write unit tests: send request, match response by transaction ID, timeout after 5s, concurrent safe
+    - [x] Implement `pkg/dht/dispatcher.go` with a `sync.Map`-backed pending request table and goroutine-driven read loop
+    - [x] Verify dispatcher tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Kademlia Core — Routing & Request/Response Engine' (Protocol in workflow.md)
 
 ## Phase 3: Bootstrap, Announce & Lookup
