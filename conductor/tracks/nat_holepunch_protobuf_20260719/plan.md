@@ -5,9 +5,9 @@
 - [x] Task: Implement STUN Binding Client Protocol [bc8ede8]
     - [x] Write unit tests verifying STUN binding request generation and response parsing (Mapped Address attribute extraction) (red phase).
     - [x] Implement STUN packet parsing, header definitions, and binding transaction logic in `pkg/utp/stun.go` (green phase).
-- [ ] Task: Implement TURN Client Protocol
-    - [ ] Write unit tests verifying TURN allocation request, permission creation, and Send/Data indication encapsulation (red phase).
-    - [ ] Implement TURN protocol state transitions, allocation management, and UDP relay framing in `pkg/utp/turn.go` (green phase).
+- [x] Task: Implement TURN Client Protocol [df8a1c8]
+    - [x] Write unit tests verifying TURN allocation request, permission creation, and Send/Data indication encapsulation (red phase).
+    - [x] Implement TURN protocol state transitions, allocation management, and UDP relay framing in `pkg/utp/turn.go` (green phase).
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: STUN & TURN Client Helpers' (Protocol in workflow.md)
 
 ## Phase 2: ICE Hole Punching and Connection Fallbacks
