@@ -49,5 +49,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: NAT Hole Punching (ICE/STUN/TURN) , UDP Relay / TURN fallback, Relay server integration , Hypercore wire protobuf spec compliance**
+- [~] **Track: NAT Hole Punching (ICE/STUN/TURN) , UDP Relay / TURN fallback, Relay server integration , Hypercore wire protobuf spec compliance**
   *Link: [./tracks/nat_holepunch_protobuf_20260719/](./tracks/nat_holepunch_protobuf_20260719/)*
