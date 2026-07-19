@@ -20,10 +20,10 @@
     - [x] Verify auto-dialing integration tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 2: DHT Peer Discovery Auto-Dialing' (Protocol in workflow.md)
 
-## Phase 3: P2P Socket Event Notification Integration
+## Phase 3: P2P Socket Event Notification Integration [checkpoint: 3a93f9b]
 
 - [x] Task: End-to-End P2P Sync & Socket Broadcast (TDD) (00593df)
     - [x] Write integration test verifying that P2P replication appends automatically broadcast `chat_message_received` notifications to Unix socket clients in the fully assembled gateway
     - [x] Link `pm.OnAppendBlock` to `ipc.BroadcastChatMessage` inside `cmd/gateway/main.go`
     - [x] Verify end-to-end integration tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: P2P Socket Event Notification Integration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: P2P Socket Event Notification Integration' (Protocol in workflow.md)
