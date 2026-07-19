@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -125,10 +128,89 @@ func main() {
 		}()
 	}
 
-	// Wire Replication to IPC notification broadcast
+	// Wire Replication to IPC notification broadcast and HTTP proxy bridge
 	pm.OnAppendBlock = func(index uint64, value []byte) {
 		cl.Infof("Replicated block index %d received from peer. Broadcasting to ADK clients...", index)
 		ipc.BroadcastChatMessage(defaultFeedKey, index, value)
+
+		if cfg.AgenticURL != "" {
+			var payload map[string]interface{}
+			if err := json.Unmarshal(value, &payload); err == nil {
+				sender, _ := payload["sender"].(string)
+				content, _ := payload["content"].(string)
+
+				if sender != "" && sender != "agentic" && content != "" {
+					cl.Infof("Forwarding chat block from %s to Agentic HTTP service: %s", sender, cfg.AgenticURL)
+					go func() {
+						postBody, err := json.Marshal(map[string]string{
+							"sender":   sender,
+							"content":  content,
+							"feed_key": defaultFeedKey,
+						})
+						if err != nil {
+							cl.Errorf("Failed to marshal agentic HTTP payload: %v", err)
+							return
+						}
+
+						resp, err := http.Post(cfg.AgenticURL, "application/json", bytes.NewBuffer(postBody))
+						if err != nil {
+							cl.Errorf("Failed to forward block to Agentic HTTP service: %v", err)
+							return
+						}
+						defer resp.Body.Close()
+
+						if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+							cl.Errorf("Agentic HTTP service returned bad status: %d", resp.StatusCode)
+							return
+						}
+
+						var respPayload map[string]interface{}
+						if err := json.NewDecoder(resp.Body).Decode(&respPayload); err != nil {
+							cl.Errorf("Failed to decode Agentic HTTP response: %v", err)
+							return
+						}
+
+						// Extract agentic response string (supporting multiple common fields)
+						var replyText string
+						if text, ok := respPayload["response"].(string); ok {
+							replyText = text
+						} else if text, ok := respPayload["content"].(string); ok {
+							replyText = text
+						} else if text, ok := respPayload["message"].(string); ok {
+							replyText = text
+						}
+
+						if replyText != "" {
+							cl.Infof("Received agentic response: %q. Appending response block to Hypercore...", replyText)
+							responseBlock, err := json.Marshal(map[string]interface{}{
+								"sender":    "agentic",
+								"timestamp": time.Now().UnixMilli(),
+								"content":   replyText,
+							})
+							if err != nil {
+								cl.Errorf("Failed to marshal agentic response block: %v", err)
+								return
+							}
+
+							currIndex := hypercoreStorage.Len()
+							if err := hypercoreStorage.Append(responseBlock); err != nil {
+								cl.Errorf("Failed to append agentic response block to storage: %v", err)
+								return
+							}
+
+							if blockRepo != nil {
+								if err := blockRepo.PutBlock(context.Background(), defaultFeedKey, currIndex, responseBlock, nil); err != nil {
+									cl.Errorf("Failed to cache agentic response block in db: %v", err)
+								}
+							}
+
+							// Broadcast to local clients and uTP engine replicates it automatically
+							ipc.BroadcastChatMessage(defaultFeedKey, currIndex, responseBlock)
+						}
+					}()
+				}
+			}
+		}
 	}
 
 	cl.Infof("ADK Communication Socket Ready at path: %s", cfg.SocketPath)

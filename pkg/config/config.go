@@ -29,8 +29,9 @@ type Config struct {
 	DBName         string   `yaml:"db_name"`
 	DBSSLMode      string   `yaml:"db_sslmode"`
 	P2PPort        string   `yaml:"p2p_port"`
-	P2PListenAddr  string   `yaml:"p2p_listen_addr"`
+	P2PListenAddr   string   `yaml:"p2p_listen_addr"`
 	ClientWhitelist []string `yaml:"client_whitelist"`
+	AgenticURL      string   `yaml:"agentic_url"`
 }
 
 func LoadConfig() Config {
@@ -56,6 +57,7 @@ func LoadConfig() Config {
 		P2PPort:         getEnv("P2P_PORT", "0"),
 		P2PListenAddr:   getEnv("P2P_LISTEN_ADDR", "127.0.0.1"),
 		ClientWhitelist: getEnvSlice("CLIENT_WHITELIST", nil),
+		AgenticURL:      getEnv("AGENTIC_URL", ""),
 	}
 
 	// 2. Find config.yaml path in order of precedence:
