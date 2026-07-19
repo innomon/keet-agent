@@ -18,9 +18,9 @@
 - [x] Task: Implement Connection Handshake & Lifecycle [77150df]
     - [x] Write unit tests verifying state transitions for client connection (SYN -> STATE/SYN-ACK -> Connected) and listener (SYN -> SYN-ACK -> Connected) (red phase).
     - [x] Implement connection creation, handshake processing, and listener state transition logic in `pkg/utp/conn.go` and `pkg/utp/listener.go` (green phase).
-- [ ] Task: Implement Connection Teardown
-    - [ ] Write unit tests verifying FIN handshakes, ACK confirmation, and RST cleanup flows (red phase).
-    - [ ] Implement connection termination logic and connection map cleanup (green phase).
+- [x] Task: Implement Connection Teardown [ffd7d69]
+    - [x] Write unit tests verifying FIN handshakes, ACK confirmation, and RST cleanup flows (red phase).
+    - [x] Implement connection termination logic and connection map cleanup (green phase).
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Connection Management and State Machine' (Protocol in workflow.md)
 
 ## Phase 3: Reliability, LEDBAT Congestion Control, and Flow Control
