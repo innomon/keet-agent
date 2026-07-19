@@ -10,14 +10,14 @@ This plan details the steps to implement the Noise handshake transport layer, co
     - [x] Verify Noise handshake tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Noise Handshake Transport Layer' (Protocol in workflow.md)
 
-## Phase 2: Concurrent Replication Session Loop
+## Phase 2: Concurrent Replication Session Loop [checkpoint: f287c15]
 
 - [x] Task: P2P Sync Session State Machine (TDD) (9fb5242)
     - [x] Write unit tests for wire frame message processing between mock peers
     - [x] Implement concurrent replication loop reading/writing frames in `pkg/hypercore/sync.go`
     - [x] Implement handshake, have, want, request, and data message handlers using flat-file/DB repos
     - [x] Verify P2P sync session tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Concurrent Replication Session Loop' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Concurrent Replication Session Loop' (Protocol in workflow.md)
 
 ## Phase 3: TCP Connection Transport Listener & Integration
 
