@@ -118,6 +118,12 @@ func main() {
 		}()
 	}
 
+	// Wire Replication to IPC notification broadcast
+	pm.OnAppendBlock = func(index uint64, value []byte) {
+		cl.Infof("Replicated block index %d received from peer. Broadcasting to ADK clients...", index)
+		ipc.BroadcastChatMessage("default_feed", index, value)
+	}
+
 	cl.Infof("ADK Communication Socket Ready at path: %s", cfg.SocketPath)
 
 	go func() {

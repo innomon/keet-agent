@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/json"
+	"net"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,6 +14,7 @@ import (
 	"github.com/innomon/keet-adk-gateway/pkg/crypto"
 	"github.com/innomon/keet-adk-gateway/pkg/dht"
 	"github.com/innomon/keet-adk-gateway/pkg/hypercore"
+	"github.com/innomon/keet-adk-gateway/pkg/ipc"
 )
 
 func TestP2PWiring_NodeIdentityAndListener(t *testing.T) {
@@ -125,5 +128,104 @@ func TestP2PWiring_DHTDiscoveryAutoDialing(t *testing.T) {
 
 	if !connected {
 		t.Fatal("expected peer manager to automatically dial B and establish Noise connection upon DHT discovery")
+	}
+}
+
+func TestP2PWiring_End2EndReplicationSocketNotification(t *testing.T) {
+	_, privA, _ := ed25519.GenerateKey(rand.Reader)
+	_, privB, _ := ed25519.GenerateKey(rand.Reader)
+
+	tempDirA, _ := os.MkdirTemp("", "wiring-e2e-a-*")
+	defer os.RemoveAll(tempDirA)
+	tempDirB, _ := os.MkdirTemp("", "wiring-e2e-b-*")
+	defer os.RemoveAll(tempDirB)
+
+	storageA, _ := hypercore.NewStorage(tempDirA)
+	defer storageA.Close()
+	storageB, _ := hypercore.NewStorage(tempDirB)
+	defer storageB.Close()
+
+	feedKey := "wiring_e2e_sync_feed"
+
+	pmA := NewPeerManager(privA, storageA, nil, feedKey)
+	defer pmA.Close()
+
+	pmB := NewPeerManager(privB, storageB, nil, feedKey)
+	defer pmB.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Socket Path for ADK client listening to B's incoming blocks
+	socketPath := "/tmp/keet-adk-e2e-wiring-test.sock"
+	_ = os.Remove(socketPath)
+
+	listener, err := ipc.NewSocketListener(socketPath)
+	if err != nil {
+		t.Fatalf("failed to create listener: %v", err)
+	}
+	defer listener.Close()
+
+	// Accept clients at B
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			go ipc.HandleClient(ctx, conn, nil, nil, storageB, nil, nil)
+		}
+	}()
+
+	// Connect ADK client to B
+	clientConn, err := net.Dial("unix", socketPath)
+	if err != nil {
+		t.Fatalf("failed to dial socket: %v", err)
+	}
+	defer clientConn.Close()
+
+	// Wait for client connection to register
+	time.Sleep(100 * time.Millisecond)
+
+	// Wire OnAppendBlock callback on B to trigger IPC socket broadcast
+	pmB.OnAppendBlock = func(index uint64, value []byte) {
+		ipc.BroadcastChatMessage(feedKey, index, value)
+	}
+
+	// Start B listener
+	if err := pmB.StartListener(ctx, "127.0.0.1:0"); err != nil {
+		t.Fatalf("failed B listener: %v", err)
+	}
+	bAddr := pmB.Addr().String()
+
+	// Dial from A
+	if err := pmA.DialPeer(ctx, bAddr); err != nil {
+		t.Fatalf("failed A dial: %v", err)
+	}
+
+	// Wait for connection to establish
+	time.Sleep(100 * time.Millisecond)
+
+	// Append valid chat message JSON block on A
+	chatJSON := `{"sender":"test_wiring_sender","timestamp":1800000000,"content":"e2e wiring test message"}`
+	if err := storageA.Append([]byte(chatJSON)); err != nil {
+		t.Fatalf("failed A append: %v", err)
+	}
+
+	// Trigger A have announcement
+	pmA.BroadcastHave(storageA.Len())
+
+	// Read notification from ADK Client connected to B!
+	var notification map[string]interface{}
+	clientConn.SetReadDeadline(time.Now().Add(3 * time.Second))
+	if err := json.NewDecoder(clientConn).Decode(&notification); err != nil {
+		t.Fatalf("failed to read notification: %v", err)
+	}
+
+	if notification["command"] != "chat_message_received" {
+		t.Errorf("expected command 'chat_message_received', got %v", notification["command"])
+	}
+	if notification["content"] != "e2e wiring test message" {
+		t.Errorf("expected content 'e2e wiring test message', got %v", notification["content"])
 	}
 }
