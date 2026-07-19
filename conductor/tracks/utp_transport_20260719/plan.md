@@ -23,7 +23,7 @@
     - [x] Implement connection termination logic and connection map cleanup (green phase).
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Connection Management and State Machine' (Protocol in workflow.md) [47f70ee]
 
-## Phase 3: Reliability, LEDBAT Congestion Control, and Flow Control
+## Phase 3: Reliability, LEDBAT Congestion Control, and Flow Control [checkpoint: b96353b]
 
 - [x] Task: Implement Reliable Data Transfer and Window Management [be334e9]
     - [x] Write unit tests verifying packet ACK matching, duplicate ACK count, Fast Retransmit, and Retransmission Timeout (RTO) calculations (red phase).
@@ -34,7 +34,7 @@
 - [x] Task: Implement net.Conn and net.Listener standard interfaces [5c04dfa]
     - [x] Write unit tests verifying standard `Read`/`Write` stream interface behavior, read/write deadlines, and concurrent call safety (red phase).
     - [x] Implement standard `net.Conn` and `net.Listener` methods on `UTPConn` and `UTPListener` (green phase).
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Reliability, LEDBAT Congestion Control, and Flow Control' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Reliability, LEDBAT Congestion Control, and Flow Control' (Protocol in workflow.md) [b96353b]
 
 ## Phase 4: Swarming Integration and End-to-End Testing
 
