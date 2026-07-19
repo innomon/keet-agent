@@ -119,6 +119,8 @@ func (sm *SocketMux) readLoop() {
 					readBuf:    make(chan *Packet, 100),
 					closeChan:  make(chan struct{}),
 					finAcked:   make(chan struct{}, 1),
+					ackChan:    make(chan uint16, 100),
+					readQueue:  make(chan []byte, 100),
 				}
 
 				if err := sm.RegisterConn(recvID, c.readBuf); err == nil {

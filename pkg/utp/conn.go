@@ -2,6 +2,7 @@ package utp
 
 import (
 	"errors"
+	"io"
 	"math/rand"
 	"net"
 	"sync"
@@ -28,17 +29,22 @@ const (
 
 // UTPConn implements net.Conn using the µTP reliable UDP stream transport.
 type UTPConn struct {
-	state      ConnState
-	mux        *SocketMux
-	remoteAddr net.Addr
-	recvID     uint16
-	sendID     uint16
-	seq        uint16
-	ack        uint16
-	readBuf    chan *Packet
-	closeChan  chan struct{}
-	finAcked   chan struct{}
-	mu         sync.Mutex
+	state         ConnState
+	mux           *SocketMux
+	remoteAddr    net.Addr
+	recvID        uint16
+	sendID        uint16
+	seq           uint16
+	ack           uint16
+	readBuf       chan *Packet
+	closeChan     chan struct{}
+	finAcked      chan struct{}
+	ackChan       chan uint16
+	readQueue     chan []byte
+	unread        []byte
+	readDeadline  time.Time
+	writeDeadline time.Time
+	mu            sync.Mutex
 }
 
 // DialUTP initiates a new µTP connection to the target remote address using the provided SocketMux.
@@ -48,15 +54,17 @@ func DialUTP(mux *SocketMux, addr net.Addr) (*UTPConn, error) {
 	sendID := s
 
 	c := &UTPConn{
-		state:      STATE_SYN_SENT,
-		mux:        mux,
+		state:     STATE_SYN_SENT,
+		mux:       mux,
 		remoteAddr: addr,
-		recvID:     recvID,
-		sendID:     sendID,
-		seq:        1,
-		readBuf:    make(chan *Packet, 100),
-		closeChan:  make(chan struct{}),
-		finAcked:   make(chan struct{}, 1),
+		recvID:    recvID,
+		sendID:    sendID,
+		seq:       1,
+		readBuf:   make(chan *Packet, 100),
+		closeChan: make(chan struct{}),
+		finAcked:  make(chan struct{}, 1),
+		ackChan:   make(chan uint16, 100),
+		readQueue: make(chan []byte, 100),
 	}
 
 	err := mux.RegisterConn(recvID, c.readBuf)
@@ -144,18 +152,168 @@ func (c *UTPConn) handlePacket(pkt *Packet) {
 			default:
 			}
 			close(c.closeChan)
+		} else {
+			select {
+			case c.ackChan <- pkt.Header.AckNum:
+			default:
+			}
+		}
+
+	case ST_DATA:
+		c.ack = pkt.Header.SeqNum
+		// Send ACK (ST_STATE)
+		ackPkt := &Packet{
+			Header: Header{
+				Type:    ST_STATE,
+				Version: 1,
+				ConnID:  c.sendID,
+				AckNum:  pkt.Header.SeqNum,
+			},
+		}
+		data, _ := ackPkt.Encode()
+		_, _ = c.mux.conn.WriteTo(data, c.remoteAddr)
+
+		select {
+		case c.readQueue <- pkt.Payload:
+		default:
 		}
 	}
 }
 
-// Read reads data from the connection (stub for handshake phase).
+// Read reads data from the connection.
 func (c *UTPConn) Read(b []byte) (n int, err error) {
-	return 0, nil
+	c.mu.Lock()
+	if len(c.unread) > 0 {
+		n = copy(b, c.unread)
+		c.unread = c.unread[n:]
+		c.mu.Unlock()
+		return n, nil
+	}
+
+	rd := c.readDeadline
+	c.mu.Unlock()
+
+	var timeoutChan <-chan time.Time
+	if !rd.IsZero() {
+		d := time.Until(rd)
+		if d <= 0 {
+			return 0, errors.New("i/o timeout")
+		}
+		timeoutChan = time.After(d)
+	}
+
+	select {
+	case payload, ok := <-c.readQueue:
+		if !ok {
+			return 0, io.EOF
+		}
+		c.mu.Lock()
+		n = copy(b, payload)
+		if n < len(payload) {
+			c.unread = payload[n:]
+		}
+		c.mu.Unlock()
+		return n, nil
+	case <-c.closeChan:
+		return 0, io.EOF
+	case <-timeoutChan:
+		return 0, errors.New("i/o timeout")
+	}
 }
 
-// Write writes data to the connection (stub for handshake phase).
+// Write writes data to the connection.
 func (c *UTPConn) Write(b []byte) (n int, err error) {
-	return 0, nil
+	c.mu.Lock()
+	if c.state != STATE_CONNECTED {
+		c.mu.Unlock()
+		return 0, errors.New("connection not open")
+	}
+	c.mu.Unlock()
+
+	totalSent := 0
+	chunkSize := 1400
+
+	for totalSent < len(b) {
+		end := totalSent + chunkSize
+		if end > len(b) {
+			end = len(b)
+		}
+		chunk := b[totalSent:end]
+
+		c.mu.Lock()
+		c.seq++
+		seq := c.seq
+		sendID := c.sendID
+		ackNum := c.ack
+		remoteAddr := c.remoteAddr
+		mux := c.mux
+		c.mu.Unlock()
+
+		pkt := &Packet{
+			Header: Header{
+				Type:    ST_DATA,
+				Version: 1,
+				ConnID:  sendID,
+				SeqNum:  seq,
+				AckNum:  ackNum,
+			},
+			Payload: chunk,
+		}
+		data, err := pkt.Encode()
+		if err != nil {
+			return totalSent, err
+		}
+
+		// Retransmit loop
+		for {
+			_, err = mux.conn.WriteTo(data, remoteAddr)
+			if err != nil {
+				return totalSent, err
+			}
+
+			// Wait for ACK
+			timeout := 100 * time.Millisecond
+			c.mu.Lock()
+			wd := c.writeDeadline
+			c.mu.Unlock()
+
+			var timeoutChan <-chan time.Time
+			if !wd.IsZero() {
+				d := time.Until(wd)
+				if d <= 0 {
+					return totalSent, errors.New("i/o timeout")
+				}
+				if d < timeout {
+					timeoutChan = time.After(d)
+				} else {
+					timeoutChan = time.After(timeout)
+				}
+			} else {
+				timeoutChan = time.After(timeout)
+			}
+
+			select {
+			case ack := <-c.ackChan:
+				if ack == seq {
+					break
+				}
+				continue
+			case <-timeoutChan:
+				c.mu.Lock()
+				isClosed := c.state == STATE_CLOSED
+				c.mu.Unlock()
+				if isClosed {
+					return totalSent, errors.New("connection closed during write")
+				}
+				continue
+			}
+			break
+		}
+
+		totalSent = end
+	}
+
+	return totalSent, nil
 }
 
 // Close closes the connection.
@@ -225,15 +383,25 @@ func (c *UTPConn) RemoteAddr() net.Addr {
 
 // SetDeadline sets the read and write deadlines.
 func (c *UTPConn) SetDeadline(t time.Time) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.readDeadline = t
+	c.writeDeadline = t
 	return nil
 }
 
 // SetReadDeadline sets the read deadline.
 func (c *UTPConn) SetReadDeadline(t time.Time) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.readDeadline = t
 	return nil
 }
 
 // SetWriteDeadline sets the write deadline.
 func (c *UTPConn) SetWriteDeadline(t time.Time) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.writeDeadline = t
 	return nil
 }
