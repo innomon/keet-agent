@@ -11,11 +11,13 @@ import (
 	"time"
 
 	"github.com/innomon/keet-adk-gateway/pkg/config"
+	"github.com/innomon/keet-adk-gateway/pkg/crypto"
 	"github.com/innomon/keet-adk-gateway/pkg/db"
 	"github.com/innomon/keet-adk-gateway/pkg/dht"
 	"github.com/innomon/keet-adk-gateway/pkg/hypercore"
 	"github.com/innomon/keet-adk-gateway/pkg/ipc"
 	"github.com/innomon/keet-adk-gateway/pkg/logger"
+	"github.com/innomon/keet-adk-gateway/pkg/network"
 )
 
 func main() {
@@ -86,6 +88,25 @@ func main() {
 		os.Exit(1)
 	}
 	defer hypercoreStorage.Close()
+
+	// Load or generate node static identity private key
+	nodePrivKey, err := crypto.LoadOrGenerateNodeKey(cfg.StorageDir)
+	if err != nil {
+		cl.Errorf("Failed to load or generate node key: %v", err)
+		os.Exit(1)
+	}
+
+	// Initialize PeerManager
+	pm := network.NewPeerManager(nodePrivKey, hypercoreStorage, blockRepo, "default_feed")
+	
+	// Start PeerManager TCP Listener
+	p2pAddr := fmt.Sprintf("%s:%s", cfg.P2PListenAddr, cfg.P2PPort)
+	if err := pm.StartListener(ctx, p2pAddr); err != nil {
+		cl.Errorf("Failed to start PeerManager listener: %v", err)
+		os.Exit(1)
+	}
+	defer pm.Close()
+	cl.Infof("P2P Listener running at address: %s", pm.Addr().String())
 
 	cl.Infof("ADK Communication Socket Ready at path: %s", cfg.SocketPath)
 

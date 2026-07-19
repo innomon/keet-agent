@@ -21,6 +21,8 @@ type Config struct {
 	DBPassword     string
 	DBName         string
 	DBSSLMode      string
+	P2PPort        string
+	P2PListenAddr  string
 }
 
 func LoadConfig() Config {
@@ -40,6 +42,8 @@ func LoadConfig() Config {
 		DBPassword:     getEnv("DB_PASSWORD", "postgres"),
 		DBName:         getEnv("DB_NAME", "keet_gateway"),
 		DBSSLMode:      getEnv("DB_SSLMODE", "disable"),
+		P2PPort:        getEnv("P2P_PORT", "0"),
+		P2PListenAddr:  getEnv("P2P_LISTEN_ADDR", "127.0.0.1"),
 	}
 }
 
