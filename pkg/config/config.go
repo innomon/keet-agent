@@ -11,49 +11,51 @@ import (
 )
 
 type Config struct {
-	LogLevel       string `yaml:"log_level"`
-	ConsoleEnabled bool   `yaml:"console_log_enabled"`
-	FileEnabled    bool   `yaml:"file_log_enabled"`
-	LogDir         string `yaml:"log_dir"`
-	LogFileName    string `yaml:"log_file_name"`
-	LogMaxSizeMB   int    `yaml:"log_max_size_mb"`
-	LogMaxBackups  int    `yaml:"log_max_backups"`
-	SocketPath     string `yaml:"socket_path"`
-	StorageDir     string `yaml:"storage_dir"`
-	DBType         string `yaml:"db_type"` // "postgres" or "bbolt"
-	BBoltPath      string `yaml:"bbolt_path"` // path to bbolt file (e.g. "storage/gateway.db")
-	DBHost         string `yaml:"db_host"`
-	DBPort         string `yaml:"db_port"`
-	DBUser         string `yaml:"db_user"`
-	DBPassword     string `yaml:"db_password"`
-	DBName         string `yaml:"db_name"`
-	DBSSLMode      string `yaml:"db_sslmode"`
-	P2PPort        string `yaml:"p2p_port"`
-	P2PListenAddr  string `yaml:"p2p_listen_addr"`
+	LogLevel       string   `yaml:"log_level"`
+	ConsoleEnabled bool     `yaml:"console_log_enabled"`
+	FileEnabled    bool     `yaml:"file_log_enabled"`
+	LogDir         string   `yaml:"log_dir"`
+	LogFileName    string   `yaml:"log_file_name"`
+	LogMaxSizeMB   int      `yaml:"log_max_size_mb"`
+	LogMaxBackups  int      `yaml:"log_max_backups"`
+	SocketPath     string   `yaml:"socket_path"`
+	StorageDir     string   `yaml:"storage_dir"`
+	DBType         string   `yaml:"db_type"` // "postgres" or "bbolt"
+	BBoltPath      string   `yaml:"bbolt_path"` // path to bbolt file (e.g. "storage/gateway.db")
+	DBHost         string   `yaml:"db_host"`
+	DBPort         string   `yaml:"db_port"`
+	DBUser         string   `yaml:"db_user"`
+	DBPassword     string   `yaml:"db_password"`
+	DBName         string   `yaml:"db_name"`
+	DBSSLMode      string   `yaml:"db_sslmode"`
+	P2PPort        string   `yaml:"p2p_port"`
+	P2PListenAddr  string   `yaml:"p2p_listen_addr"`
+	ClientWhitelist []string `yaml:"client_whitelist"`
 }
 
 func LoadConfig() Config {
 	// 1. Initialize with environment variables and defaults
 	cfg := Config{
-		LogLevel:       getEnv("LOG_LEVEL", "INFO"),
-		ConsoleEnabled: getEnvBool("CONSOLE_LOG_ENABLED", true),
-		FileEnabled:    getEnvBool("FILE_LOG_ENABLED", true),
-		LogDir:         getEnv("LOG_DIR", "logs"),
-		LogFileName:    getEnv("LOG_FILE_NAME", "gateway.log"),
-		LogMaxSizeMB:   getEnvInt("LOG_MAX_SIZE_MB", 10),
-		LogMaxBackups:  getEnvInt("LOG_MAX_BACKUPS", 5),
-		SocketPath:     getEnv("SOCKET_PATH", "/tmp/keet-adk.sock"),
-		StorageDir:     getEnv("STORAGE_DIR", "storage"),
-		DBType:         getEnv("DB_TYPE", "bbolt"),
-		BBoltPath:      getEnv("BBOLT_PATH", "storage/gateway.db"),
-		DBHost:         getEnv("DB_HOST", "localhost"),
-		DBPort:         getEnv("DB_PORT", "5432"),
-		DBUser:         getEnv("DB_USER", "postgres"),
-		DBPassword:     getEnv("DB_PASSWORD", "postgres"),
-		DBName:         getEnv("DB_NAME", "keet_gateway"),
-		DBSSLMode:      getEnv("DB_SSLMODE", "disable"),
-		P2PPort:        getEnv("P2P_PORT", "0"),
-		P2PListenAddr:  getEnv("P2P_LISTEN_ADDR", "127.0.0.1"),
+		LogLevel:        getEnv("LOG_LEVEL", "INFO"),
+		ConsoleEnabled:  getEnvBool("CONSOLE_LOG_ENABLED", true),
+		FileEnabled:     getEnvBool("FILE_LOG_ENABLED", true),
+		LogDir:          getEnv("LOG_DIR", "logs"),
+		LogFileName:     getEnv("LOG_FILE_NAME", "gateway.log"),
+		LogMaxSizeMB:    getEnvInt("LOG_MAX_SIZE_MB", 10),
+		LogMaxBackups:   getEnvInt("LOG_MAX_BACKUPS", 5),
+		SocketPath:      getEnv("SOCKET_PATH", "/tmp/keet-adk.sock"),
+		StorageDir:      getEnv("STORAGE_DIR", "storage"),
+		DBType:          getEnv("DB_TYPE", "bbolt"),
+		BBoltPath:       getEnv("BBOLT_PATH", "storage/gateway.db"),
+		DBHost:          getEnv("DB_HOST", "localhost"),
+		DBPort:          getEnv("DB_PORT", "5432"),
+		DBUser:          getEnv("DB_USER", "postgres"),
+		DBPassword:      getEnv("DB_PASSWORD", "postgres"),
+		DBName:          getEnv("DB_NAME", "keet_gateway"),
+		DBSSLMode:       getEnv("DB_SSLMODE", "disable"),
+		P2PPort:         getEnv("P2P_PORT", "0"),
+		P2PListenAddr:   getEnv("P2P_LISTEN_ADDR", "127.0.0.1"),
+		ClientWhitelist: getEnvSlice("CLIENT_WHITELIST", nil),
 	}
 
 	// 2. Find config.yaml path in order of precedence:
@@ -137,4 +139,19 @@ func getEnvInt(key string, fallback int) int {
 	}
 	return fallback
 }
+
+func getEnvSlice(key string, fallback []string) []string {
+	if value, exists := os.LookupEnv(key); exists {
+		if value == "" {
+			return []string{}
+		}
+		parts := strings.Split(value, ",")
+		for i := range parts {
+			parts[i] = strings.TrimSpace(parts[i])
+		}
+		return parts
+	}
+	return fallback
+}
+
 

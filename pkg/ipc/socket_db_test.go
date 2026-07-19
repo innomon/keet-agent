@@ -65,7 +65,7 @@ func TestSocket_DBIntegration(t *testing.T) {
 			if err != nil {
 				return
 			}
-			go HandleClient(ctx, conn, nil, nil, storage, swarmRepo, blockRepo)
+			go HandleClient(ctx, conn, nil, nil, storage, swarmRepo, blockRepo, nil)
 		}
 	}()
 

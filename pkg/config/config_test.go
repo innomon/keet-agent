@@ -108,6 +108,8 @@ func TestHelpers(t *testing.T) {
 	os.Setenv("TEST_BOOL_INVALID", "not-a-bool")
 	os.Setenv("TEST_INT", "123")
 	os.Setenv("TEST_INT_INVALID", "not-an-int")
+	os.Setenv("TEST_SLICE", "alice, bob, charlie")
+	os.Setenv("TEST_SLICE_EMPTY", "")
 
 	defer func() {
 		os.Unsetenv("TEST_BOOL_TRUE")
@@ -115,6 +117,8 @@ func TestHelpers(t *testing.T) {
 		os.Unsetenv("TEST_BOOL_INVALID")
 		os.Unsetenv("TEST_INT")
 		os.Unsetenv("TEST_INT_INVALID")
+		os.Unsetenv("TEST_SLICE")
+		os.Unsetenv("TEST_SLICE_EMPTY")
 	}()
 
 	if !getEnvBool("TEST_BOOL_TRUE", false) {
@@ -132,5 +136,21 @@ func TestHelpers(t *testing.T) {
 	if getEnvInt("TEST_INT_INVALID", 999) != 999 {
 		t.Error("expected default 999")
 	}
+
+	slice := getEnvSlice("TEST_SLICE", nil)
+	if len(slice) != 3 || slice[0] != "alice" || slice[1] != "bob" || slice[2] != "charlie" {
+		t.Errorf("expected slice [alice, bob, charlie], got %v", slice)
+	}
+
+	emptySlice := getEnvSlice("TEST_SLICE_EMPTY", []string{"default"})
+	if len(emptySlice) != 0 {
+		t.Errorf("expected empty slice, got %v", emptySlice)
+	}
+
+	fallbackSlice := getEnvSlice("TEST_SLICE_MISSING", []string{"fallback"})
+	if len(fallbackSlice) != 1 || fallbackSlice[0] != "fallback" {
+		t.Errorf("expected fallback slice, got %v", fallbackSlice)
+	}
 }
+
 

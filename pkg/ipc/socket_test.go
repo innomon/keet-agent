@@ -88,7 +88,7 @@ func TestSocket_ConcurrentClients(t *testing.T) {
 					return
 				}
 			}
-			go HandleClient(ctx, conn, nil, nil, nil, nil, nil)
+			go HandleClient(ctx, conn, nil, nil, nil, nil, nil, nil)
 		}
 	}()
 
@@ -152,7 +152,7 @@ func TestSocket_SwarmCommands(t *testing.T) {
 			if err != nil {
 				return
 			}
-			go HandleClient(ctx, conn, nil, nil, nil, nil, nil)
+			go HandleClient(ctx, conn, nil, nil, nil, nil, nil, nil)
 		}
 	}()
 
@@ -229,7 +229,7 @@ func TestSocket_HypercoreCommands(t *testing.T) {
 			if err != nil {
 				return
 			}
-			go HandleClient(ctx, conn, nil, nil, storage, nil, nil)
+			go HandleClient(ctx, conn, nil, nil, storage, nil, nil, nil)
 		}
 	}()
 
@@ -311,7 +311,7 @@ func TestSocket_NotificationBroadcast(t *testing.T) {
 			if err != nil {
 				return
 			}
-			go HandleClient(ctx, conn, nil, nil, storage, nil, nil)
+			go HandleClient(ctx, conn, nil, nil, storage, nil, nil, nil)
 		}
 	}()
 
@@ -401,7 +401,7 @@ func TestSocket_P2PReplicationBroadcastNotification(t *testing.T) {
 			if err != nil {
 				return
 			}
-			go HandleClient(ctx, conn, nil, nil, storageB, nil, nil)
+			go HandleClient(ctx, conn, nil, nil, storageB, nil, nil, nil)
 		}
 	}()
 
@@ -506,7 +506,7 @@ func TestSocket_DHTIntegration(t *testing.T) {
 			if err != nil {
 				return
 			}
-			go HandleClient(ctx, conn, nodeB, regB, nil, nil, nil)
+			go HandleClient(ctx, conn, nodeB, regB, nil, nil, nil, nil)
 		}
 	}()
 

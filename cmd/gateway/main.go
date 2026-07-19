@@ -152,6 +152,6 @@ func main() {
 				continue
 			}
 		}
-		go ipc.HandleClient(ctx, conn, dhtNode, swarmRegistry, hypercoreStorage, swarmRepo, blockRepo)
+		go ipc.HandleClient(ctx, conn, dhtNode, swarmRegistry, hypercoreStorage, swarmRepo, blockRepo, cfg.ClientWhitelist)
 	}
 }

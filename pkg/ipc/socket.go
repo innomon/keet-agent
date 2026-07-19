@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/innomon/keet-adk-gateway/pkg/db"
@@ -71,22 +72,39 @@ func BroadcastChatMessage(feedKey string, index uint64, value []byte) {
 
 type SocketListener struct {
 	listener net.Listener
+	network  string
 	path     string
 }
 
-func NewSocketListener(path string) (*SocketListener, error) {
-	// Clean up stale socket file if it exists
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("failed to clear stale socket: %w", err)
+func NewSocketListener(addr string) (*SocketListener, error) {
+	network := "unix"
+	path := addr
+
+	if strings.HasPrefix(addr, "tcp://") {
+		network = "tcp"
+		path = strings.TrimPrefix(addr, "tcp://")
+	} else if strings.Contains(addr, ":") {
+		// Try TCP if there is a colon and no forward slashes
+		if !strings.Contains(addr, "/") {
+			network = "tcp"
+		}
 	}
 
-	listener, err := net.Listen("unix", path)
+	if network == "unix" {
+		// Clean up stale socket file if it exists
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			return nil, fmt.Errorf("failed to clear stale socket: %w", err)
+		}
+	}
+
+	listener, err := net.Listen(network, path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to bind Unix socket: %w", err)
+		return nil, fmt.Errorf("failed to bind %s listener on %s: %w", network, path, err)
 	}
 
 	return &SocketListener{
 		listener: listener,
+		network:  network,
 		path:     path,
 	}, nil
 }
@@ -100,12 +118,15 @@ func (s *SocketListener) Close() error {
 	if s.listener != nil {
 		err = s.listener.Close()
 	}
-	// Clean up socket file on close
-	_ = os.Remove(s.path)
+	if s.network == "unix" {
+		// Clean up socket file on close
+		_ = os.Remove(s.path)
+	}
 	return err
 }
 
-func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dht.SwarmRegistry, store *hypercore.Storage, swarmRepo db.SwarmRepository, blockRepo db.BlockRepository) {
+
+func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dht.SwarmRegistry, store *hypercore.Storage, swarmRepo db.SwarmRepository, blockRepo db.BlockRepository, whitelist []string) {
 	defer conn.Close()
 	slog.Info("New ADK Client pipeline bound successfully", "remote", conn.RemoteAddr())
 
@@ -114,6 +135,8 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 
 	ActiveClients.Register(conn, encoder)
 	defer ActiveClients.Unregister(conn)
+
+	authenticated := len(whitelist) == 0
 
 	for {
 		select {
@@ -131,10 +154,31 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 			cmd, _ := req["command"].(string)
 			resp := map[string]interface{}{"status": "acknowledged", "origin": "keet_peer"}
 
+			// Check and extract peer key for inline authentication
+			peerKey, _ := req["peer_key"].(string)
+			if peerKey != "" && isWhitelisted(peerKey, whitelist) {
+				authenticated = true
+			}
+
+			if !authenticated {
+				resp = map[string]interface{}{
+					"status":  "error",
+					"command": cmd,
+					"error":   "unauthorized client public key or authentication required",
+				}
+				_ = encoder.Encode(&resp)
+				slog.Warn("Rejected unauthorized ADK client attempt", "remote", conn.RemoteAddr())
+				return
+			}
+
 			switch cmd {
+			case "auth":
+				resp = map[string]interface{}{
+					"status":  "success",
+					"command": "auth",
+				}
 			case "join_swarm":
 				topic, _ := req["topic"].(string)
-				peerKey, _ := req["peer_key"].(string)
 				resolvedKey, err := dht.ResolveTopicKey(topic)
 				if err != nil {
 					resp = map[string]interface{}{
@@ -309,3 +353,16 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 		}
 	}
 }
+
+func isWhitelisted(key string, whitelist []string) bool {
+	if len(whitelist) == 0 {
+		return true
+	}
+	for _, w := range whitelist {
+		if w == key {
+			return true
+		}
+	}
+	return false
+}
+

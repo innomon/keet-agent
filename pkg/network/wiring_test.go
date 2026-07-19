@@ -206,7 +206,7 @@ func TestP2PWiring_End2EndReplicationSocketNotification(t *testing.T) {
 			if err != nil {
 				return
 			}
-			go ipc.HandleClient(ctx, conn, nil, nil, storageB, nil, nil)
+			go ipc.HandleClient(ctx, conn, nil, nil, storageB, nil, nil, nil)
 		}
 	}()
 
