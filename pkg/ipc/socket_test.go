@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/innomon/keet-adk-gateway/pkg/dht"
 	"github.com/innomon/keet-adk-gateway/pkg/hypercore"
 	"github.com/innomon/keet-adk-gateway/pkg/network"
 )
@@ -460,5 +461,111 @@ func TestSocket_P2PReplicationBroadcastNotification(t *testing.T) {
 	}
 	if notification["content"] != "p2p live message broadcast" {
 		t.Errorf("expected content 'p2p live message broadcast', got %v", notification["content"])
+	}
+}
+
+func TestSocket_DHTIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	// 1. Setup 2-node DHT network
+	tpA, _ := dht.NewInProcessTransport("nodeA")
+	idA := [32]byte{1}
+	nodeA, _ := dht.NewDHTNode(&dht.Config{LocalID: idA, Transport: tpA, BootstrapNodes: []string{}})
+	_ = nodeA.Start(ctx)
+	defer nodeA.Stop()
+
+	tpB, _ := dht.NewInProcessTransport("nodeB")
+	idB := [32]byte{2}
+	nodeB, _ := dht.NewDHTNode(&dht.Config{LocalID: idB, Transport: tpB, BootstrapNodes: []string{"nodeA"}})
+	_ = nodeB.Start(ctx)
+	defer nodeB.Stop()
+
+	// Pre-announce nodeA on the topic key
+	topic := "chat-room-123"
+	resolvedKey, _ := dht.ResolveTopicKey(topic)
+	_ = nodeA.Announce(ctx, resolvedKey, 6001)
+
+	// 2. Setup socket listener
+	socketPath := "/tmp/keet-adk-dht-integration.sock"
+	_ = os.Remove(socketPath)
+
+	listener, err := NewSocketListener(socketPath)
+	if err != nil {
+		t.Fatalf("failed to create listener: %v", err)
+	}
+	defer listener.Close()
+
+	regB := dht.NewSwarmRegistry()
+	regB.P2PPort = 6002
+
+	// Run HandleClient with nodeB and regB
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			go HandleClient(ctx, conn, nodeB, regB, nil, nil, nil)
+		}
+	}()
+
+	// 3. Dial as client and send join_swarm
+	clientConn, err := net.Dial("unix", socketPath)
+	if err != nil {
+		t.Fatalf("failed to dial socket: %v", err)
+	}
+	defer clientConn.Close()
+
+	req := map[string]interface{}{
+		"command":  "join_swarm",
+		"topic":    topic,
+		"peer_key": "nodeB_identity_key",
+	}
+
+	if err := json.NewEncoder(clientConn).Encode(&req); err != nil {
+		t.Fatalf("failed to send join_swarm: %v", err)
+	}
+
+	var resp map[string]interface{}
+	if err := json.NewDecoder(clientConn).Decode(&resp); err != nil {
+		t.Fatalf("failed to read response: %v", err)
+	}
+
+	if resp["status"] != "success" {
+		t.Fatalf("expected status 'success', got: %v", resp)
+	}
+
+	// Verify nodeA's peer was discovered and registered in regB!
+	// Give it a brief moment for the lookup to complete
+	time.Sleep(100 * time.Millisecond)
+
+	peers := regB.GetPeers(resolvedKey)
+	foundA := false
+	for _, p := range peers {
+		if p == "nodeA:6001" || p == "nodeA" {
+			foundA = true
+		}
+	}
+
+	if !foundA {
+		t.Errorf("expected to discover nodeA on the swarm registry of B, got peers: %v", peers)
+	}
+
+	// Send leave_swarm and verify
+	reqLeave := map[string]interface{}{
+		"command": "leave_swarm",
+		"topic":   topic,
+	}
+	if err := json.NewEncoder(clientConn).Encode(&reqLeave); err != nil {
+		t.Fatalf("failed to send leave_swarm: %v", err)
+	}
+
+	var respLeave map[string]interface{}
+	if err := json.NewDecoder(clientConn).Decode(&respLeave); err != nil {
+		t.Fatalf("failed to read leave response: %v", err)
+	}
+	if respLeave["status"] != "success" {
+		t.Fatalf("expected leave status 'success', got: %v", respLeave)
 	}
 }

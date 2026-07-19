@@ -151,6 +151,28 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 							slog.Error("Failed to register swarm in db", "err", err)
 						}
 					}
+
+					if node != nil {
+						var p2pPort uint16
+						if reg != nil {
+							p2pPort = reg.P2PPort
+						}
+						if err := node.Announce(ctx, resolvedKey, p2pPort); err != nil {
+							slog.Error("Failed to announce to DHT on join_swarm", "err", err)
+						}
+
+						peers, err := node.Lookup(ctx, resolvedKey)
+						if err == nil {
+							for _, peer := range peers {
+								if reg != nil {
+									reg.RegisterPeer(resolvedKey, peer)
+								}
+							}
+						} else {
+							slog.Error("Failed to lookup from DHT on join_swarm", "err", err)
+						}
+					}
+
 					slog.Info("Successfully joined DHT swarm topic", "topic", topic, "key", hex.EncodeToString(resolvedKey[:]))
 
 					resp = map[string]interface{}{
@@ -164,6 +186,9 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 				topic, _ := req["topic"].(string)
 				resolvedKey, err := dht.ResolveTopicKey(topic)
 				if err == nil {
+					if node != nil {
+						_ = node.Leave(ctx, resolvedKey)
+					}
 					if reg != nil {
 						reg.ClearSwarm(resolvedKey)
 					}

@@ -6,6 +6,7 @@ type SwarmRegistry struct {
 	mu             sync.RWMutex
 	swarms         map[[32]byte][]string
 	OnRegisterPeer func(topic [32]byte, peerAddr string)
+	P2PPort        uint16
 }
 
 func NewSwarmRegistry() *SwarmRegistry {
