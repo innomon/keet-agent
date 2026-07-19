@@ -1,6 +1,6 @@
 # Implementation Plan: NAT Hole Punching and Hypercore Protobuf Wire Compliance
 
-## Phase 1: STUN & TURN Client Helpers
+## Phase 1: STUN & TURN Client Helpers [checkpoint: 1d133fe]
 
 - [x] Task: Implement STUN Binding Client Protocol [bc8ede8]
     - [x] Write unit tests verifying STUN binding request generation and response parsing (Mapped Address attribute extraction) (red phase).
@@ -8,7 +8,7 @@
 - [x] Task: Implement TURN Client Protocol [df8a1c8]
     - [x] Write unit tests verifying TURN allocation request, permission creation, and Send/Data indication encapsulation (red phase).
     - [x] Implement TURN protocol state transitions, allocation management, and UDP relay framing in `pkg/utp/turn.go` (green phase).
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: STUN & TURN Client Helpers' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: STUN & TURN Client Helpers' (Protocol in workflow.md) [1d133fe]
 
 ## Phase 2: ICE Hole Punching and Connection Fallbacks
 
