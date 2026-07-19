@@ -12,42 +12,40 @@ The gateway is built on a multi-layered, asynchronous architecture structured in
 
 ```mermaid
 graph TD
-    subgraph Client Layer
-        KC[Keet Client / Mobile App]
-        CS[Custom ADK Script / Consumer]
+    subgraph Client & Remote Layer
+        KMA[Keet Mobile App - Public WAN]
+        ADMC[Admin CLI / Diagnostic Tool]
     end
 
-    subgraph Interface & Gatekeeper
-        SL[SocketListener - TCP or Unix]
-        IPCP[IPC Socket Handler & Router]
+    subgraph Interface & Protocols
+        UTP[uTP P2P Holepunch & Sync Engine]
+        SL[Local SocketListener - Unix/TCP]
+        IPCP[IPC Command Processor]
+    end
+
+    subgraph Gateway Core & Security
         WLG[Whitelist Security Gatekeeper]
-    end
-
-    subgraph Data Subsystem
-        HS[Hypercore Local Storage]
+        HS[Hypercore Block Storage]
         DB[Unified Database Dispatcher]
-        BB[BoltDB Embedded Bucket Cache]
-        PG[PostgreSQL Relational Storage]
+        BB[BoltDB Embedded Storage]
     end
 
-    subgraph P2P Network
-        DHTN[Distributed Hash Table Node]
-        SR[Swarm Registry]
-        UTP[uTP Holepunch / TCP Sync Engine]
+    subgraph Local Network Runtime
+        AGT[agentic HTTP Service - 192.168.1.10]
     end
 
-    KC -->|Connect| SL
-    CS -->|Connect| SL
+    KMA <-->|P2P Block Replication| UTP
+    UTP <-->|Sync Feed Blocks| HS
+    
+    ADMC -->|Connect IPC| SL
     SL --> IPCP
     IPCP --> WLG
-    WLG -->|Authorized Commands| HS
-    WLG -->|Register Swarms / Cache Blocks| DB
-    DB -->|Pure Go| BB
-    DB -->|Relational SQL| PG
+    WLG -->|Admin Commands| HS
+    WLG -->|Cache Feeds / Blocks| DB
+    DB -->|Pure Go Default| BB
     
-    IPCP -->|Announce / Lookup Swarms| DHTN
-    DHTN <-->|Find Peers| SR
-    HS <-->|Replicate Blocks| UTP
+    HS -->|OnAppendBlock Event / Proxy Bridge| AGT
+    AGT -->|ADK.dev HTTP POST Response| HS
 ```
 
 ---
@@ -85,37 +83,26 @@ The diagram below outlines the standard flow when an authorized client registers
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Client as Keet Client
-    participant IPC as IPC Socket
-    participant SEC as Security Gatekeeper
-    participant DB as DB Repository
-    participant DHT as DHT Node
-    participant HC as Hypercore / uTP
+    actor Phone as Keet Mobile App (Public WAN)
+    participant GW as Keet ADK Gateway
+    participant DB as BBolt Database
+    participant AGT as agentic HTTP Service (Pi 5)
 
-    Client->>IPC: Connect (TCP/Unix)
-    Client->>IPC: Send auth command {peer_key: "0123..."}
-    IPC->>SEC: Is "0123..." in Whitelist?
-    SEC-->>IPC: Authorized
-    IPC-->>Client: {"status": "success", "command": "auth"}
+    Note over Phone, AGT: =================== PHASE 1: Swarm Discovery & P2P Handshake ===================
+    Phone->>GW: Announce & Lookup Peer over DHT
+    Phone->>GW: Establish uTP Tunnel Connection (NAT Holepunch)
+    GW->>DB: Check if Peer Key is Whitelisted
+    GW-->>Phone: P2P uTP Handshake Accepted
 
-    rect rgb(240, 248, 255)
-        Note over Client, DHT: Swarm Discovery Flow
-        Client->>IPC: Send join_swarm {topic: "room-abc"}
-        IPC->>DB: Register Swarm Topic Metadata
-        IPC->>DHT: Announce topic "room-abc" to DHT network
-        DHT-->>IPC: Peer lookup complete (found peer X, Y, Z)
-        IPC-->>Client: {"status": "success", "resolved_topic_key": "feed123..."}
-    end
-
-    rect rgb(245, 245, 245)
-        Note over Client, HC: Append & Replication Flow
-        Client->>IPC: Send append_block {data: "base64...", signature: "..."}
-        IPC->>HC: Append raw data into active Hypercore Storage
-        IPC->>DB: PutBlock (cache block data & signatures in BBolt)
-        HC->>HC: Trigger OnAppendBlock Event
-        HC->>Client: Replicate and sync blocks with Peer X, Y, Z via uTP
-        IPC-->>Client: {"status": "success", "index": 42}
-    end
+    Note over Phone, AGT: =================== PHASE 2: Message Replication & Proxy Bridge Loop ===================
+    Phone->>GW: Replicate Chat Block (uTP Message Send)
+    GW->>DB: PutBlock (Cache Block & Sigs in BBolt)
+    GW->>AGT: HTTP POST to /chat {sender, content} (adk.dev API)
+    Note over AGT: agentic processes via local LLM
+    AGT-->>GW: HTTP Response 200 OK {response}
+    GW->>GW: Append response block to local Hypercore
+    GW->>DB: PutBlock (Cache response block in BBolt)
+    GW->>Phone: Replicate new block back to Mobile Client (uTP)
 ```
 
 ---
