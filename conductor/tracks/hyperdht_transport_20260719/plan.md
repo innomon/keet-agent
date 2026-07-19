@@ -1,6 +1,6 @@
 # Implementation Plan: Implement HyperDHT Network Transport
 
-## Phase 1: Transport Interface & RPC Codec
+## Phase 1: Transport Interface & RPC Codec [checkpoint: 8edf658]
 
 - [x] Task: Define `Transport` Interface & `UDPTransport` (TDD) [155f2dd]
     - [x] Write unit tests for `UDPTransport`: bind, send, receive, close lifecycle
@@ -15,7 +15,7 @@
     - [x] Write unit tests for encode/decode round-trips of all 7 message types: PING, PONG, FIND_NODE, FIND_NODE_RESP, ANNOUNCE, LOOKUP, LOOKUP_RESP
     - [x] Implement `pkg/dht/rpc.go` with binary-encoded RPC structs and a 4-byte transaction ID
     - [x] Verify codec tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Transport Interface & RPC Codec' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Transport Interface & RPC Codec' (Protocol in workflow.md) [8edf658]
 
 ## Phase 2: Kademlia Core — Routing & Request/Response Engine
 
