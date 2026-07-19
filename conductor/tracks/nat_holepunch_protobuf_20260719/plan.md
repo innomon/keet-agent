@@ -30,7 +30,7 @@
     - [x] Implement compression algorithms and extension payload parsing on replication sessions in `pkg/hypercore/sync.go` (green phase).
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Hypercore Wire Protobuf Spec Compliance' (Protocol in workflow.md) [03b7db4]
 
-## Phase 4: Integration and End-to-End Traversal Testing
+## Phase 4: Integration and End-to-End Traversal Testing [checkpoint: 7e9580d]
 
 - [x] Task: Integrate NAT Traversal with Peer Discovery and Replication [7bbfedf]
     - [x] Write unit tests verifying that PeerManager automatically initiates STUN/ICE traversal upon discovering a peer via HyperDHT, falling back to TURN relay connection (red phase).
@@ -38,4 +38,4 @@
 - [x] Task: End-to-End Verification and Coverage Gates [977d329]
     - [x] Write integration tests verifying E2E traversal and replication over simulated restricted NAT routers (red phase).
     - [x] Verify clean builds, pass all tests, and check quality gate metrics with >80% coverage (green phase).
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Integration and End-to-End Traversal Testing' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Integration and End-to-End Traversal Testing' (Protocol in workflow.md) [7e9580d]
