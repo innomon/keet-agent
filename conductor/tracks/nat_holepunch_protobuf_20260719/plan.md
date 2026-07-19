@@ -20,7 +20,7 @@
     - [x] Integrate fallback relay transport path into client dialing and server listener handling in `pkg/utp/conn.go` (green phase).
 - [x] Task: Conductor - User Manual Verification 'Phase 2: ICE Hole Punching and Connection Fallbacks' (Protocol in workflow.md) [51a4518]
 
-## Phase 3: Hypercore Wire Protobuf Spec Compliance
+## Phase 3: Hypercore Wire Protobuf Spec Compliance [checkpoint: 03b7db4]
 
 - [x] Task: Define compliant Hypercore Wire Protobuf Schema and Serialization [73919fb]
     - [x] Write unit tests verifying Hypercore wire message validation rules (max frame length, missing fields constraint, capability field length checking) (red phase).
@@ -28,7 +28,7 @@
 - [x] Task: Implement Extension Messages and Compression [f24193e]
     - [x] Write unit tests verifying capabilities exchange and Inflate/Deflate compression/decompression on wire frames (red phase).
     - [x] Implement compression algorithms and extension payload parsing on replication sessions in `pkg/hypercore/sync.go` (green phase).
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Hypercore Wire Protobuf Spec Compliance' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Hypercore Wire Protobuf Spec Compliance' (Protocol in workflow.md) [03b7db4]
 
 ## Phase 4: Integration and End-to-End Traversal Testing
 
