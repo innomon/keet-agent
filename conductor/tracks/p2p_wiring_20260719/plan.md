@@ -14,10 +14,10 @@
 
 ## Phase 2: DHT Peer Discovery Auto-Dialing
 
-- [ ] Task: DHT Peer Swarm Integration (TDD)
-    - [ ] Write integration test verifying that when DHT registers a new peer, the gateway automatically dials the peer
-    - [ ] Wire DHT swarm registry additions to invoke `pm.DialPeer` in `cmd/gateway/main.go`
-    - [ ] Verify auto-dialing integration tests pass
+- [x] Task: DHT Peer Swarm Integration (TDD) (2ad3d5e)
+    - [x] Write integration test verifying that when DHT registers a new peer, the gateway automatically dials the peer
+    - [x] Wire DHT swarm registry additions to invoke `pm.DialPeer` in `cmd/gateway/main.go`
+    - [x] Verify auto-dialing integration tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: DHT Peer Discovery Auto-Dialing' (Protocol in workflow.md)
 
 ## Phase 3: P2P Socket Event Notification Integration
