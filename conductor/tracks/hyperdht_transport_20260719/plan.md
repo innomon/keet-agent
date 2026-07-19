@@ -7,10 +7,10 @@
     - [x] Define `Transport` interface with `ReadFrom`, `WriteTo`, `Close`, `Addr` methods in `pkg/dht/transport.go`
     - [x] Implement `UDPTransport` backed by `net.ListenPacket("udp", addr)`
     - [x] Verify transport tests pass
-- [ ] Task: Implement `InProcessTransport` loopback stub (TDD)
-    - [ ] Write unit tests verifying two `InProcessTransport` instances can exchange packets in-process
-    - [ ] Implement `InProcessTransport` with `chan []byte` backing, connecting named endpoints
-    - [ ] Verify stub transport tests pass
+- [x] Task: Implement `InProcessTransport` loopback stub (TDD) [1ee8756]
+    - [x] Write unit tests verifying two `InProcessTransport` instances can exchange packets in-process
+    - [x] Implement `InProcessTransport` with `chan []byte` backing, connecting named endpoints
+    - [x] Verify stub transport tests pass
 - [ ] Task: Implement Kademlia RPC message codec (TDD)
     - [ ] Write unit tests for encode/decode round-trips of all 7 message types: PING, PONG, FIND_NODE, FIND_NODE_RESP, ANNOUNCE, LOOKUP, LOOKUP_RESP
     - [ ] Implement `pkg/dht/rpc.go` with binary-encoded RPC structs and a 4-byte transaction ID
