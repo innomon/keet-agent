@@ -12,8 +12,10 @@ import (
 	"github.com/innomon/keet-adk-gateway/pkg/crypto"
 	"github.com/innomon/keet-adk-gateway/pkg/db"
 	"github.com/innomon/keet-adk-gateway/pkg/hypercore"
+	"github.com/innomon/keet-adk-gateway/pkg/utp"
 )
 
+// PeerManager coordinates active remote peer sessions and local block synchronization.
 type PeerManager struct {
 	localPriv     ed25519.PrivateKey
 	storage       *hypercore.Storage
@@ -28,6 +30,7 @@ type PeerManager struct {
 	OnAppendBlock func(index uint64, value []byte)
 }
 
+// NewPeerManager instantiates a new PeerManager with the given credentials.
 func NewPeerManager(localPriv ed25519.PrivateKey, storage *hypercore.Storage, blockRepo *db.BlockRepository, feedKey string) *PeerManager {
 	return &PeerManager{
 		localPriv: localPriv,
@@ -39,11 +42,21 @@ func NewPeerManager(localPriv ed25519.PrivateKey, storage *hypercore.Storage, bl
 	}
 }
 
+// StartListener starts the UDP socket, running a SocketMux and UTPListener to accept incoming connections.
 func (pm *PeerManager) StartListener(ctx context.Context, addr string) error {
-	l, err := net.Listen("tcp", addr)
+	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return err
 	}
+	packetConn, err := net.ListenUDP("udp", udpAddr)
+	if err != nil {
+		return err
+	}
+
+	mux := utp.NewSocketMux(packetConn)
+	mux.Start()
+
+	l := utp.NewUTPListener(mux)
 	pm.listener = l
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -71,16 +84,48 @@ func (pm *PeerManager) StartListener(ctx context.Context, addr string) error {
 	return nil
 }
 
+type clientUTPConn struct {
+	net.Conn
+	mux *utp.SocketMux
+}
+
+// Close overrides net.Conn.Close to also stop the client-side SocketMux.
+func (c *clientUTPConn) Close() error {
+	err := c.Conn.Close()
+	c.mux.Stop()
+	return err
+}
+
+// DialPeer establishes an outbound UTP connection to the target remote address.
 func (pm *PeerManager) DialPeer(ctx context.Context, addr string) error {
-	conn, err := net.Dial("tcp", addr)
+	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return err
+	}
+
+	localConn, err := net.ListenPacket("udp", "127.0.0.1:0")
+	if err != nil {
+		return err
+	}
+
+	mux := utp.NewSocketMux(localConn)
+	mux.Start()
+
+	conn, err := utp.DialUTP(mux, udpAddr)
+	if err != nil {
+		mux.Stop()
+		return err
+	}
+
+	wrappedConn := &clientUTPConn{
+		Conn: conn,
+		mux:  mux,
 	}
 
 	pm.wg.Add(1)
 	go func() {
 		defer pm.wg.Done()
-		pm.handleOutgoing(ctx, conn)
+		pm.handleOutgoing(ctx, wrappedConn)
 	}()
 
 	return nil
@@ -158,6 +203,7 @@ func (pm *PeerManager) handleOutgoing(ctx context.Context, conn net.Conn) {
 	}
 }
 
+// BroadcastHave broadcasts the current hypercore feed length to all active sync sessions.
 func (pm *PeerManager) BroadcastHave(length uint64) {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
@@ -168,6 +214,7 @@ func (pm *PeerManager) BroadcastHave(length uint64) {
 	}
 }
 
+// Addr returns the listener address if active.
 func (pm *PeerManager) Addr() net.Addr {
 	if pm.listener != nil {
 		return pm.listener.Addr()
@@ -182,6 +229,7 @@ func (pm *PeerManager) ConnCount() int {
 	return len(pm.conns)
 }
 
+// Close gracefully closes the listener and cleans up all active peer connections.
 func (pm *PeerManager) Close() {
 	if pm.cancel != nil {
 		pm.cancel()

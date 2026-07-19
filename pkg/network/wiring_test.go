@@ -58,8 +58,8 @@ func TestP2PWiring_NodeIdentityAndListener(t *testing.T) {
 		t.Fatal("expected peer manager bound address to be non-nil")
 	}
 
-	if addr.Network() != "tcp" {
-		t.Errorf("expected TCP network, got %s", addr.Network())
+	if addr.Network() != "utp" {
+		t.Errorf("expected UTP network, got %s", addr.Network())
 	}
 }
 

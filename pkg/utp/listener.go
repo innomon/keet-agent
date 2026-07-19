@@ -36,11 +36,21 @@ func (l *UTPListener) Accept() (net.Conn, error) {
 // Close closes the listener.
 func (l *UTPListener) Close() error {
 	l.mux.DeregisterListener()
+	l.mux.Stop()
 	close(l.closeChan)
 	return nil
 }
 
+type utpAddr struct {
+	net.Addr
+}
+
+// Network returns "utp" as the network name.
+func (a utpAddr) Network() string {
+	return "utp"
+}
+
 // Addr returns the listener's network address.
 func (l *UTPListener) Addr() net.Addr {
-	return l.mux.conn.LocalAddr()
+	return utpAddr{l.mux.conn.LocalAddr()}
 }

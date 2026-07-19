@@ -373,12 +373,12 @@ func (c *UTPConn) Close() error {
 
 // LocalAddr returns the local network address.
 func (c *UTPConn) LocalAddr() net.Addr {
-	return c.mux.conn.LocalAddr()
+	return utpAddr{c.mux.conn.LocalAddr()}
 }
 
 // RemoteAddr returns the remote network address.
 func (c *UTPConn) RemoteAddr() net.Addr {
-	return c.remoteAddr
+	return utpAddr{c.remoteAddr}
 }
 
 // SetDeadline sets the read and write deadlines.

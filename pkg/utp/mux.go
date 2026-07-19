@@ -14,6 +14,7 @@ type SocketMux struct {
 	listener  *UTPListener
 	mu        sync.RWMutex
 	closeChan chan struct{}
+	closeOnce sync.Once
 	wg        sync.WaitGroup
 }
 
@@ -34,8 +35,10 @@ func (sm *SocketMux) Start() {
 
 // Stop shuts down the packet read loop and closes the underlying connection.
 func (sm *SocketMux) Stop() {
-	close(sm.closeChan)
-	sm.conn.Close()
+	sm.closeOnce.Do(func() {
+		close(sm.closeChan)
+		sm.conn.Close()
+	})
 	sm.wg.Wait()
 }
 
