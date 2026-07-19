@@ -66,3 +66,13 @@ func TestICE_GatherCandidates(t *testing.T) {
 		t.Error("expected at least host candidates to be gathered")
 	}
 }
+
+func TestICE_GetNominatedPair(t *testing.T) {
+	session := NewICESession()
+	session.ConfirmCheck("127.0.0.1:1000", "127.0.0.1:2000")
+	local, remote := session.GetNominatedPair()
+	if local != "127.0.0.1:1000" || remote != "127.0.0.1:2000" {
+		t.Errorf("expected nominated pair, got %s -> %s", local, remote)
+	}
+}
+

@@ -15,9 +15,9 @@
 - [x] Task: Implement ICE Candidate Exchange and Hole Punching [2898ede]
     - [x] Write unit tests verifying candidate exchange sequence, direct socket hole-punching attempts, and successful direct binding (red phase).
     - [x] Implement UDP punch packet exchanges, candidate ranking/discovery, and direct UDP socket association in `pkg/utp/ice.go` (green phase).
-- [ ] Task: Implement TURN UDP Relay Fallback
-    - [ ] Write unit tests verifying relay fallback switching logic upon direct connection timeout or failure (red phase).
-    - [ ] Integrate fallback relay transport path into client dialing and server listener handling in `pkg/utp/conn.go` (green phase).
+- [x] Task: Implement TURN UDP Relay Fallback [aaa30ab]
+    - [x] Write unit tests verifying relay fallback switching logic upon direct connection timeout or failure (red phase).
+    - [x] Integrate fallback relay transport path into client dialing and server listener handling in `pkg/utp/conn.go` (green phase).
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: ICE Hole Punching and Connection Fallbacks' (Protocol in workflow.md)
 
 ## Phase 3: Hypercore Wire Protobuf Spec Compliance
