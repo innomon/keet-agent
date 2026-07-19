@@ -41,7 +41,7 @@
 - [x] Task: Integrate UTP transport with connection and DHT swarming layers [1af9f41]
     - [x] Write unit tests verifying connection dialing and swarming peer connections over UTP (red phase).
     - [x] Replace or extend standard socket dialing/listening logic in the P2P wiring and gateway manager to use UTP (green phase).
-- [ ] Task: Complete End-to-End P2P gateway validation
-    - [ ] Write integration tests validating Noise handshake, Hypercore replication, and chat message sync over UTP transport (red phase).
-    - [ ] Verify everything compiles cleanly and passes all test suites with >80% coverage (green phase).
+- [x] Task: Complete End-to-End P2P gateway validation [e8a0739]
+    - [x] Write integration tests validating Noise handshake, Hypercore replication, and chat message sync over UTP transport (red phase).
+    - [x] Verify everything compiles cleanly and passes all test suites with >80% coverage (green phase).
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Swarming Integration and End-to-End Testing' (Protocol in workflow.md)
