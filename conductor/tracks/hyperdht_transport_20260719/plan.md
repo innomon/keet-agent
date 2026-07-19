@@ -52,14 +52,14 @@
 
 ## Phase 4: IPC Integration & Swarm Re-hydration
 
-- [ ] Task: Wire `DHTNode` into IPC `join_swarm` / `leave_swarm` handlers (TDD)
-    - [ ] Write integration test: IPC client sends `join_swarm`; verify `DHTNode.Announce` and `DHTNode.Lookup` are called and discovered peers are registered in `SwarmRegistry`
-    - [ ] Update `pkg/ipc/socket.go` `HandleClient`: in `join_swarm`, call `dhtNode.Announce(ctx, topicKey)` then `dhtNode.Lookup(ctx, topicKey)` and feed results into `swarmRegistry.RegisterPeer`
-    - [ ] Update `leave_swarm` to call `dhtNode.Leave(ctx, topicKey)`
-    - [ ] Verify IPC integration tests pass
-- [ ] Task: Implement swarm re-hydration on gateway restart (TDD)
-    - [ ] Write integration test: persist a swarm to DB, restart `DHTNode`, verify `Announce` + `Lookup` are called for the persisted topic
-    - [ ] Update `DHTNode.Start`: after bootstrap, call `swarmRepo.GetActiveSwarms(ctx)`, for each topic call `Announce` + `Lookup`
-    - [ ] Thread `swarmRepo *db.SwarmRepository` through to `DHTNode` (or accept it as a `Start` parameter)
-    - [ ] Verify re-hydration integration tests pass
+- [x] Task: Wire `DHTNode` into IPC `join_swarm` / `leave_swarm` handlers (TDD) [ccc8de0]
+    - [x] Write integration test: IPC client sends `join_swarm`; verify `DHTNode.Announce` and `DHTNode.Lookup` are called and discovered peers are registered in `SwarmRegistry`
+    - [x] Update `pkg/ipc/socket.go` `HandleClient`: in `join_swarm`, call `dhtNode.Announce(ctx, topicKey)` then `dhtNode.Lookup(ctx, topicKey)` and feed results into `swarmRegistry.RegisterPeer`
+    - [x] Update `leave_swarm` to call `dhtNode.Leave(ctx, topicKey)`
+    - [x] Verify IPC integration tests pass
+- [x] Task: Implement swarm re-hydration on gateway restart (TDD) [6a86d40]
+    - [x] Write integration test: persist a swarm to DB, restart `DHTNode`, verify `Announce` + `Lookup` are called for the persisted topic
+    - [x] Update `DHTNode.Start`: after bootstrap, call `swarmRepo.GetActiveSwarms(ctx)`, for each topic call `Announce` + `Lookup`
+    - [x] Thread `swarmRepo *db.SwarmRepository` through to `DHTNode` (or accept it as a `Start` parameter)
+    - [x] Verify re-hydration integration tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: IPC Integration & Swarm Re-hydration' (Protocol in workflow.md)
