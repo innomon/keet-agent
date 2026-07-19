@@ -2,3 +2,5 @@
 /logs/
 *.sock
 *.log
+gateway
+*.out
