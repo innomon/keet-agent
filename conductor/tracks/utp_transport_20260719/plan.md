@@ -15,9 +15,9 @@
 - [x] Task: Implement Socket Multiplexer (SocketMux) [4204631]
     - [x] Write unit tests verifying UDP packet demultiplexing to correct connections by source address and Connection ID (red phase).
     - [x] Implement connection tracking, incoming packet dispatching, and local binding in `pkg/utp/mux.go` (green phase).
-- [ ] Task: Implement Connection Handshake & Lifecycle
-    - [ ] Write unit tests verifying state transitions for client connection (SYN -> STATE/SYN-ACK -> Connected) and listener (SYN -> SYN-ACK -> Connected) (red phase).
-    - [ ] Implement connection creation, handshake processing, and listener state transition logic in `pkg/utp/conn.go` and `pkg/utp/listener.go` (green phase).
+- [x] Task: Implement Connection Handshake & Lifecycle [77150df]
+    - [x] Write unit tests verifying state transitions for client connection (SYN -> STATE/SYN-ACK -> Connected) and listener (SYN -> SYN-ACK -> Connected) (red phase).
+    - [x] Implement connection creation, handshake processing, and listener state transition logic in `pkg/utp/conn.go` and `pkg/utp/listener.go` (green phase).
 - [ ] Task: Implement Connection Teardown
     - [ ] Write unit tests verifying FIN handshakes, ACK confirmation, and RST cleanup flows (red phase).
     - [ ] Implement connection termination logic and connection map cleanup (green phase).
