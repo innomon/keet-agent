@@ -5,9 +5,9 @@
 - [x] Task: Design and Implement µTP Packet Structure and Serialization [9514064]
     - [x] Write unit tests verifying packet serialization, deserialization, and header validation (red phase).
     - [x] Implement packet header structure and encoding/decoding functions in `pkg/utp/packet.go` (green phase).
-- [ ] Task: Create UDP Lossy Network Simulator
-    - [ ] Write unit tests verifying packet drop, delay jitter, and out-of-order delivery logic under the simulator (red phase).
-    - [ ] Implement `pkg/utp/simulator.go` wrapping UDP PacketConn to simulate lossy networks (green phase).
+- [x] Task: Create UDP Lossy Network Simulator [ce08a0a]
+    - [x] Write unit tests verifying packet drop, delay jitter, and out-of-order delivery logic under the simulator (red phase).
+    - [x] Implement `pkg/utp/simulator.go` wrapping UDP PacketConn to simulate lossy networks (green phase).
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Packet Protocol and Simulation Layer' (Protocol in workflow.md)
 
 ## Phase 2: Connection Management and State Machine
