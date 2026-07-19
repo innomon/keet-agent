@@ -19,10 +19,10 @@ This plan details the steps to implement the Noise handshake transport layer, co
     - [x] Verify P2P sync session tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Concurrent Replication Session Loop' (Protocol in workflow.md)
 
-## Phase 3: TCP Connection Transport Listener & Integration
+## Phase 3: TCP Connection Transport Listener & Integration [checkpoint: 70de0fc]
 
 - [x] Task: TCP Socket Transport (TDD) (b876062)
     - [x] Write unit tests for dialing/listening TCP connections with Noise encryption
     - [x] Implement TCP connection manager listener loops in `pkg/network/tcp.go`
     - [x] Verify TCP socket transport tests pass
-- [~] Task: Conductor - User Manual Verification 'Phase 3: TCP Connection Transport Listener & Integration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: TCP Connection Transport Listener & Integration' (Protocol in workflow.md)
