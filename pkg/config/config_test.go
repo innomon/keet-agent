@@ -6,6 +6,25 @@ import (
 )
 
 func TestLoadConfig_Defaults(t *testing.T) {
+	envKeys := []string{
+		"LOG_LEVEL", "CONSOLE_LOG_ENABLED", "FILE_LOG_ENABLED", "LOG_DIR",
+		"LOG_FILE_NAME", "LOG_MAX_SIZE_MB", "LOG_MAX_BACKUPS", "SOCKET_PATH",
+		"STORAGE_DIR", "DB_HOST", "DB_PORT", "DB_USER", "DB_PASSWORD",
+		"DB_NAME", "DB_SSLMODE", "P2P_PORT", "P2P_LISTEN_ADDR", "DHT_BOOTSTRAP_NODES",
+	}
+	savedEnv := make(map[string]string)
+	for _, k := range envKeys {
+		if val, exists := os.LookupEnv(k); exists {
+			savedEnv[k] = val
+			os.Unsetenv(k)
+		}
+	}
+	defer func() {
+		for k, val := range savedEnv {
+			os.Setenv(k, val)
+		}
+	}()
+
 	cfg := LoadConfig()
 
 	if cfg.LogLevel != "INFO" {
