@@ -117,3 +117,26 @@ sequenceDiagram
         IPC-->>Client: {"status": "success", "index": 42}
     end
 ```
+
+---
+
+## 4. Concurrency & Thread-Safety Model
+
+The Keet ADK Gateway is designed from the ground up for high-performance concurrent processing. This ensures it can handle multiple peer sync streams, local HTTP API proxy requests, and IPC client broadcast requests simultaneously without lock contention or data races.
+
+### A. Thread-Safe Subsystems
+
+| Subsystem | Components Involved | Synchronization Mechanism |
+|---|---|---|
+| **Local Hypercore Storage** | `hypercore.Storage` (`Len`, `Append`, `Get`) | Explicit `sync.Mutex` locks protect log offset, lengths, and file handles from concurrent write corruption. |
+| **Active Clients Registry** | `ipc.ClientRegistry` (`Register`, `Unregister`, `Broadcast`) | Mutex locks ensure thread-safe registration and iteration of active local IPC socket streams. |
+| **Database Persistence** | `db.SwarmRepository`, `db.BlockRepository` | **BBolt** uses an internal database mutex for ACID writes via transactions (`db.Update`). **PostgreSQL** uses connection pooling (`pgx` with `sql.DB`) for secure multi-threaded query multiplexing. |
+| **Configurations** | `config.Config` | Loaded on startup and treated as read-only (immutable) throughout the lifecycle of the process. |
+
+### B. Multi-Threaded Replication Execution Flow
+
+When multiple external peers on the public Internet replicate blocks simultaneously over uTP:
+1. **Goroutine-per-Connection:** The TCP/uTP network listener spawns a standalone, lightweight goroutine for each active peer session.
+2. **Concurrent Callback Execution:** The replication callback (`pm.OnAppendBlock`) is invoked concurrently on the matching peer's goroutine, handling parallel block updates.
+3. **Asynchronous HTTP Proxy (Non-blocking I/O):** Inside `OnAppendBlock`, forwarding HTTP messages to the local `agentic` service is offloaded to a newly spawned goroutine (`go func() { ... }()`). This ensures slow or high-latency network requests to your local IP do not block or lag the underlying peer's uTP block replication pipeline.
+
