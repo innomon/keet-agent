@@ -11,7 +11,7 @@ This guide describes how to configure, run, and secure the Keet ADK Gateway on a
 4. The **Keet ADK Gateway acts as a chat proxy and ADK.dev protocol client**, connecting to `agentic`'s HTTP endpoint. It acts as a standard peer in the chat swarm room, transparently proxying messages between the Keet Mobile app and the `agentic` service.
 5. The **Keet Mobile App runs on the public Internet**, communicating with the RPi5 gateway securely and peer-to-peer via DHT swarm orchestration and uTP NAT holepunching. To the mobile app, it is as if it is communicating with another standard Keet mobile client.
 
-No public port forwarding, dynamic DNS, or local IPC socket listeners are required for the agent-to-mobile communication!
+No public port forwarding or dynamic DNS is required for the client-gateway connection!
 
 ---
 
@@ -62,57 +62,93 @@ Instead of exposing any socket interface to the public network, the gateway uses
 
 ---
 
-## 2. Gateway Production Configuration (`config.yaml`)
+## 2. Dual-Mode Operation (Usecase Scenarios)
 
-Configure your gateway to enable the HTTP proxy bridge by defining the `agentic_url` property in your `config.yaml`.
+The gateway supports two operational modes simultaneously. This provides extreme versatility depending on your integration needs.
 
-```yaml
-# log settings
-log_level: INFO
-console_log_enabled: true
-file_log_enabled: true
+### 🌟 Usecase Scenario 1: Standalone P2P Chat Proxy (HTTP Bridge Mode)
+* **Goal:** Run an automated, hands-free assistant on your Pi 5 behind firewalls, making your local LLM accessible to your phone anywhere in the world.
+* **How it works:** You run `./agentic` on HTTP port `8080` and the gateway daemon. There is **no need for any socket client**. The gateway automatically captures inbound P2P chat messages, translates them into ADK HTTP post requests, gets the response, and publishes it back to the swarm.
 
-# database settings (Pure Go BBolt is default and recommended for RPi5)
-db_type: bbolt
-bbolt_path: storage/gateway.db
-
-# Agentic HTTP Bridge Proxy URL (ADK Protocol endpoint)
-agentic_url: http://192.168.1.10:8080/api/v1/chat
-
-# DHT / Peer-to-Peer Settings
-p2p_port: "0" # 0 means use random ephemeral port for holepunching
-p2p_listen_addr: 0.0.0.0 # Bind P2P engine to all interfaces to listen for incoming WAN holepunches
-
-# Access control whitelist (only allow specific Keet mobile keys to replicate blocks)
-client_whitelist:
-  - "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" # Replace with your Keet Mobile App's public key
-```
+### 🌟 Usecase Scenario 2: Interactive Socket Control (IPC Local Mode)
+* **Goal:** Perform real-time administrative commands, monitor live network swarm sessions, or build local custom dashboards side-by-side with your active agent.
+* **How it works:** In addition to forwarding messages via HTTP, the gateway keeps its local Unix domain socket `/tmp/keet-adk.sock` active. You can run local diagnostic scripts or direct command-line clients to verify database caches, inspect feeds, or broadcast manual broadcast notifications.
 
 ---
 
-## 3. Whitelist Verification & Security
+## 3. Step-by-Step Runnable Examples
 
-To prevent unauthorized internet nodes from synchronizing with your RPi5 or commanding your local model, the whitelisting mechanism acts directly at the replication and command level.
+Below are concrete, terminal-ready commands you can run directly on your Raspberry Pi 5 to test and interact with the gateway in both modes.
 
-1. **Replication Guard:** The ADK Gateway verifies peer identities during the initial uTP handshake inside `join_swarm` and block requests.
-2. **Access Protection:** Only feeds and blocks carrying signatures associated with whitelisted keys are verified, processed, and persisted in the local BoltDB database.
+### Example A: Running in Standalone HTTP Proxy Mode
+
+1. **Configure `config.yaml`:**
+   Create a `config.yaml` file in your directory:
+   ```yaml
+   log_level: INFO
+   db_type: bbolt
+   bbolt_path: storage/gateway.db
+   socket_path: /tmp/keet-adk.sock
+   agentic_url: http://192.168.1.10:8080/api/v1/chat
+   client_whitelist:
+     - "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+   ```
+
+2. **Start your `agentic` runtime:**
+   ```bash
+   ./agentic -webui -a2a -host=192.168.1.10
+   ```
+
+3. **Start the Keet ADK Gateway:**
+   ```bash
+   ./bin/gateway --config config.yaml
+   ```
+   Now, any message sent from your Whitelisted Mobile App in the swarm room is automatically routed over HTTP to `agentic`, resolved, and synced back to your mobile client.
 
 ---
 
-## 4. Running the Agentic Loop with `agentic`
+### Example B: Testing & Interacting via Local Unix Socket (IPC Mode)
 
-Launch your agentic runtime on the local network IP:
+You can use the native utility `nc` (netcat) to establish an interactive, real-time command session directly into the local Unix domain socket. This is incredibly useful for manual diagnostics.
 
-```bash
-# Execute agentic framework on local IP with WebUI and Agent-to-Agent protocol enabled
-./agentic -webui -a2a -host=192.168.1.10
-```
+1. **Connect to the socket using `netcat`:**
+   ```bash
+   nc -U /tmp/keet-adk.sock
+   ```
 
-The gateway's HTTP bridge parses the response payload from `agentic` in order of common JSON keys: `response`, `content`, or `message`. This makes it compatible with any standard ADK HTTP specifications.
+2. **Send an explicit Authentication Command:**
+   Copy, paste, and press Enter to authenticate your session:
+   ```json
+   {"command": "auth", "peer_key": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}
+   ```
+   *Expected Response:*
+   ```json
+   {"status":"success","command":"auth"}
+   ```
+
+3. **Manually Join a Swarm Room:**
+   Send the join command to register the topic:
+   ```json
+   {"command": "join_swarm", "topic": "my-secure-room", "peer_key": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}
+   ```
+   *Expected Response:*
+   ```json
+   {"status":"success","command":"join_swarm","resolved_topic_key":"..."}
+   ```
+
+4. **Append a Message Block Manually:**
+   Package a Base64-encoded message and send it:
+   ```json
+   {"command": "append_block", "feed_key": "default_feed", "data": "eyJzZW5kZXIiOiJtYW51YWwiLCJjb250ZW50IjoiSGVsbG8gZnJvbSBOZXRjYXQhIn0="}
+   ```
+   *Expected Response:*
+   ```json
+   {"status":"success","command":"append_block","index":0}
+   ```
 
 ---
 
-## 5. Deployment Summary Checklist
+## 4. Deployment Summary Checklist
 
 1. [ ] **DHT Port Accessibility:** Ensure that your router allows UDP egress so the gateway can query external bootstrap DHT nodes and announce topics.
 2. [ ] **Whitelist Key:** Capture your Keet mobile app’s public key from the app settings, add it to `client_whitelist` in `config.yaml`, and restart the gateway on your Pi.
