@@ -24,6 +24,7 @@ type PeerManager struct {
 	sessions  map[string]*hypercore.SyncSession
 	wg        sync.WaitGroup
 	cancel    context.CancelFunc
+	OnAppendBlock func(index uint64, value []byte)
 }
 
 func NewPeerManager(localPriv ed25519.PrivateKey, storage *hypercore.Storage, blockRepo *db.BlockRepository, feedKey string) *PeerManager {
@@ -94,9 +95,10 @@ func (pm *PeerManager) handleIncoming(ctx context.Context, conn net.Conn) {
 	}
 	defer secureConn.Close()
 
-	peerKey := fmt.Sprintf("%x", remotePub)
 	session := hypercore.NewSyncSession(secureConn, pm.storage, pm.blockRepo, pm.feedKey, pm.localPriv, remotePub, false)
+	session.OnAppendBlock = pm.OnAppendBlock
 
+	peerKey := fmt.Sprintf("%x", remotePub)
 	pm.mu.Lock()
 	pm.conns[peerKey] = secureConn
 	pm.sessions[peerKey] = session
@@ -124,9 +126,10 @@ func (pm *PeerManager) handleOutgoing(ctx context.Context, conn net.Conn) {
 	}
 	defer secureConn.Close()
 
-	peerKey := fmt.Sprintf("%x", remotePub)
 	session := hypercore.NewSyncSession(secureConn, pm.storage, pm.blockRepo, pm.feedKey, pm.localPriv, remotePub, true)
+	session.OnAppendBlock = pm.OnAppendBlock
 
+	peerKey := fmt.Sprintf("%x", remotePub)
 	pm.mu.Lock()
 	pm.conns[peerKey] = secureConn
 	pm.sessions[peerKey] = session
@@ -152,6 +155,13 @@ func (pm *PeerManager) BroadcastHave(length uint64) {
 			slog.Error("Failed to send Have broadcast to session", "err", err)
 		}
 	}
+}
+
+func (pm *PeerManager) Addr() net.Addr {
+	if pm.listener != nil {
+		return pm.listener.Addr()
+	}
+	return nil
 }
 
 func (pm *PeerManager) Close() {

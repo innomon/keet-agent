@@ -24,6 +24,7 @@ type SyncSession struct {
 	localPriv   ed25519.PrivateKey
 	isInitiator bool
 	writeMu     sync.Mutex
+	OnAppendBlock func(index uint64, value []byte)
 }
 
 func NewSyncSession(conn net.Conn, storage *Storage, blockRepo *db.BlockRepository, feedKey string, localPriv ed25519.PrivateKey, remotePub ed25519.PublicKey, isInitiator bool) *SyncSession {
@@ -225,6 +226,10 @@ func (s *SyncSession) readLoop(ctx context.Context) error {
 							slog.Error("Failed to save replicated block in DB repository", "index", dataMsg.Index, "err", err)
 						}
 					}
+					if s.OnAppendBlock != nil {
+						s.OnAppendBlock(dataMsg.Index, dataMsg.Value)
+					}
+
 					slog.Info("Successfully verified and appended replicated block", "index", dataMsg.Index)
 				}
 			}

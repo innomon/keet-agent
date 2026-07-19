@@ -9,11 +9,65 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"sync"
 
 	"github.com/innomon/keet-adk-gateway/pkg/db"
 	"github.com/innomon/keet-adk-gateway/pkg/dht"
 	"github.com/innomon/keet-adk-gateway/pkg/hypercore"
 )
+
+type ClientRegistry struct {
+	mu      sync.Mutex
+	clients map[net.Conn]*json.Encoder
+}
+
+var ActiveClients = &ClientRegistry{
+	clients: make(map[net.Conn]*json.Encoder),
+}
+
+func (cr *ClientRegistry) Register(conn net.Conn, encoder *json.Encoder) {
+	cr.mu.Lock()
+	defer cr.mu.Unlock()
+	cr.clients[conn] = encoder
+}
+
+func (cr *ClientRegistry) Unregister(conn net.Conn) {
+	cr.mu.Lock()
+	defer cr.mu.Unlock()
+	delete(cr.clients, conn)
+}
+
+func (cr *ClientRegistry) Broadcast(msg map[string]interface{}) {
+	cr.mu.Lock()
+	defer cr.mu.Unlock()
+	for conn, encoder := range cr.clients {
+		if err := encoder.Encode(msg); err != nil {
+			slog.Error("Failed to broadcast message to client", "remote", conn.RemoteAddr(), "err", err)
+		}
+	}
+}
+
+func BroadcastChatMessage(feedKey string, index uint64, value []byte) {
+	var payload map[string]interface{}
+	if err := json.Unmarshal(value, &payload); err == nil {
+		// Verify if it contains the required keys of a ChatMessage
+		_, hasSender := payload["sender"]
+		_, hasTimestamp := payload["timestamp"]
+		_, hasContent := payload["content"]
+
+		if hasSender && hasTimestamp && hasContent {
+			notification := map[string]interface{}{
+				"command":   "chat_message_received",
+				"feed_key":  feedKey,
+				"index":     index,
+				"sender":    payload["sender"],
+				"timestamp": payload["timestamp"],
+				"content":   payload["content"],
+			}
+			ActiveClients.Broadcast(notification)
+		}
+	}
+}
 
 type SocketListener struct {
 	listener net.Listener
@@ -57,6 +111,9 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 
 	decoder := json.NewDecoder(conn)
 	encoder := json.NewEncoder(conn)
+
+	ActiveClients.Register(conn, encoder)
+	defer ActiveClients.Unregister(conn)
 
 	for {
 		select {
@@ -147,11 +204,11 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 								"error":   fmt.Sprintf("failed to append: %v", err),
 							}
 						} else {
+							feedKey, _ := req["feed_key"].(string)
+							if feedKey == "" {
+								feedKey = "default_feed"
+							}
 							if blockRepo != nil {
-								feedKey, _ := req["feed_key"].(string)
-								if feedKey == "" {
-									feedKey = "default_feed"
-								}
 								var sig []byte
 								if sigStr, ok := req["signature"].(string); ok {
 									sig, _ = base64.StdEncoding.DecodeString(sigStr)
@@ -160,6 +217,7 @@ func HandleClient(ctx context.Context, conn net.Conn, node *dht.DHTNode, reg *dh
 									slog.Error("Failed to cache block in db", "err", err)
 								}
 							}
+							BroadcastChatMessage(feedKey, currIndex, decoded)
 							resp = map[string]interface{}{
 								"status":  "success",
 								"command": "append_block",

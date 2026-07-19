@@ -2,6 +2,9 @@ package ipc
 
 import (
 	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"net"
 	"os"
@@ -10,6 +13,7 @@ import (
 	"time"
 
 	"github.com/innomon/keet-adk-gateway/pkg/hypercore"
+	"github.com/innomon/keet-adk-gateway/pkg/network"
 )
 
 func TestSocketListener(t *testing.T) {
@@ -272,5 +276,189 @@ func TestSocket_HypercoreCommands(t *testing.T) {
 	}
 	if respGet["data"] != "aGVsbG8gYmxvY2s=" {
 		t.Errorf("expected 'aGVsbG8gYmxvY2s=', got %v", respGet["data"])
+	}
+}
+
+func TestSocket_NotificationBroadcast(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "hypercore_socket_notify_test_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	storage, err := hypercore.NewStorage(tempDir)
+	if err != nil {
+		t.Fatalf("failed to create storage: %v", err)
+	}
+	defer storage.Close()
+
+	socketPath := "/tmp/keet-adk-notify-test.sock"
+	_ = os.Remove(socketPath)
+
+	listener, err := NewSocketListener(socketPath)
+	if err != nil {
+		t.Fatalf("failed to create socket listener: %v", err)
+	}
+	defer listener.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			go HandleClient(ctx, conn, nil, nil, storage, nil, nil)
+		}
+	}()
+
+	conn, err := net.Dial("unix", socketPath)
+	if err != nil {
+		t.Fatalf("failed to dial: %v", err)
+	}
+	defer conn.Close()
+
+	// Connect a second client to check broadcast functionality
+	conn2, err := net.Dial("unix", socketPath)
+	if err != nil {
+		t.Fatalf("failed to dial client 2: %v", err)
+	}
+	defer conn2.Close()
+
+	// Wait for clients to bind
+	time.Sleep(100 * time.Millisecond)
+
+	// Append a valid ChatMessage JSON block
+	chatJSON := `{"sender":"test_sender_key","timestamp":1700000000,"content":"broadcast test message"}`
+	
+	reqAppend := map[string]interface{}{
+		"command": "append_block",
+		"data":    base64.StdEncoding.EncodeToString([]byte(chatJSON)),
+	}
+	if err := json.NewEncoder(conn).Encode(&reqAppend); err != nil {
+		t.Fatalf("failed to send append_block: %v", err)
+	}
+
+	// Read append ack response from conn
+	var respAppend map[string]interface{}
+	if err := json.NewDecoder(conn).Decode(&respAppend); err != nil {
+		t.Fatalf("failed to read response: %v", err)
+	}
+
+	// Read notification from conn2 (which is passive but should receive the broadcast!)
+	var notification map[string]interface{}
+	
+	// Set read deadline so it doesn't block indefinitely
+	conn2.SetReadDeadline(time.Now().Add(1 * time.Second))
+	if err := json.NewDecoder(conn2).Decode(&notification); err != nil {
+		t.Fatalf("failed to read notification: %v", err)
+	}
+
+	if notification["command"] != "chat_message_received" {
+		t.Errorf("expected command 'chat_message_received', got %v", notification["command"])
+	}
+	if notification["content"] != "broadcast test message" {
+		t.Errorf("expected content 'broadcast test message', got %v", notification["content"])
+	}
+}
+
+func TestSocket_P2PReplicationBroadcastNotification(t *testing.T) {
+	_, privA, _ := ed25519.GenerateKey(rand.Reader)
+	_, privB, _ := ed25519.GenerateKey(rand.Reader)
+
+	tempDirA, _ := os.MkdirTemp("", "ipc-p2p-sync-a-*")
+	defer os.RemoveAll(tempDirA)
+	tempDirB, _ := os.MkdirTemp("", "ipc-p2p-sync-b-*")
+	defer os.RemoveAll(tempDirB)
+
+	storageA, _ := hypercore.NewStorage(tempDirA)
+	defer storageA.Close()
+	storageB, _ := hypercore.NewStorage(tempDirB)
+	defer storageB.Close()
+
+	feedKey := "p2p_socket_broadcast_feed"
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Socket Path for ADK client listening to B's incoming blocks
+	socketPath := "/tmp/keet-adk-p2p-broadcast-test.sock"
+	_ = os.Remove(socketPath)
+
+	listener, err := NewSocketListener(socketPath)
+	if err != nil {
+		t.Fatalf("failed to create listener: %v", err)
+	}
+	defer listener.Close()
+
+	// Accept clients at B and run HandleClient
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			go HandleClient(ctx, conn, nil, nil, storageB, nil, nil)
+		}
+	}()
+
+	// Connect ADK client to B
+	clientConn, err := net.Dial("unix", socketPath)
+	if err != nil {
+		t.Fatalf("failed to dial socket: %v", err)
+	}
+	defer clientConn.Close()
+
+	// Wait for ADK client to bind
+	time.Sleep(100 * time.Millisecond)
+
+	pmA := network.NewPeerManager(privA, storageA, nil, feedKey)
+	defer pmA.Close()
+
+	pmB := network.NewPeerManager(privB, storageB, nil, feedKey)
+	defer pmB.Close()
+
+	// Broadcast callback on B to trigger Socket notification
+	pmB.OnAppendBlock = func(index uint64, value []byte) {
+		BroadcastChatMessage(feedKey, index, value)
+	}
+
+	// Start B listener
+	if err := pmB.StartListener(ctx, "127.0.0.1:0"); err != nil {
+		t.Fatalf("failed B listener: %v", err)
+	}
+	bAddr := pmB.Addr().String()
+
+	// Dial from A
+	if err := pmA.DialPeer(ctx, bAddr); err != nil {
+		t.Fatalf("failed A dial: %v", err)
+	}
+
+	// Wait for handshakes
+	time.Sleep(100 * time.Millisecond)
+
+	// Append a valid chat message JSON block on A
+	chatJSON := `{"sender":"test_p2p_sender","timestamp":1750000000,"content":"p2p live message broadcast"}`
+	if err := storageA.Append([]byte(chatJSON)); err != nil {
+		t.Fatalf("failed A append: %v", err)
+	}
+
+	// Trigger A have announcement
+	pmA.BroadcastHave(storageA.Len())
+
+	// Read notification from ADK Client connected to B!
+	var notification map[string]interface{}
+	clientConn.SetReadDeadline(time.Now().Add(3 * time.Second))
+	if err := json.NewDecoder(clientConn).Decode(&notification); err != nil {
+		t.Fatalf("failed to read notification: %v", err)
+	}
+
+	if notification["command"] != "chat_message_received" {
+		t.Errorf("expected command 'chat_message_received', got %v", notification["command"])
+	}
+	if notification["content"] != "p2p live message broadcast" {
+		t.Errorf("expected content 'p2p live message broadcast', got %v", notification["content"])
 	}
 }
