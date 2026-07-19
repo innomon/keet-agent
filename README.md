@@ -63,9 +63,9 @@ You can customize the gateway's behavior by placing a `config.yaml` next to your
 
 To help you get the most out of the Keet ADK Gateway, check out the specialized guides in our `docs/` directory:
 
-* 🏗️ **[System Architecture Guide](file:///home/innomon/orez/apps/keet-agent/docs/ARCHITECTURE.md)** — Core service topology, packet routing, and database layout.
-* 💾 **[Database Design & Interfaces](file:///home/innomon/orez/apps/keet-agent/docs/embedded-db.md)** — Structural details regarding BoltDB binary serialization and repository abstractions.
-* 📶 **[Production Raspberry Pi 5 Guide](file:///home/innomon/orez/apps/keet-agent/docs/production_setup_guide.md)** — Step-by-step tutorial on local Wi-Fi mobile routing, Whitelist setup, and local LLM orchestration with **Ollama** and **IBM Granite**.
+* 🏗️ **[System Architecture Guide](docs/ARCHITECTURE.md)** — Core service topology, packet routing, and database layout.
+* 💾 **[Database Design & Interfaces](docs/embedded-db.md)** — Structural details regarding BoltDB binary serialization and repository abstractions.
+* 📶 **[Production Raspberry Pi 5 Guide](docs/production_setup_guide.md)** — Step-by-step tutorial on local Wi-Fi mobile routing, Whitelist setup, and local LLM orchestration with **Ollama** and **IBM Granite**.
 
 ---
 

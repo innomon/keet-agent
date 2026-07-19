@@ -55,6 +55,8 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
+	// Socket listener is maintained for local admin diagnostics, CLI command executions,
+	// and backward-compatibility with standard non-HTTP ADK clients.
 	listener, err := ipc.NewSocketListener(cfg.SocketPath)
 	if err != nil {
 		cl.Errorf("Failed to initialize Unix domain socket: %v", err)
