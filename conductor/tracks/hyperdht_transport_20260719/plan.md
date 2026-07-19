@@ -50,7 +50,7 @@
     - [x] Verify leave test passes
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Bootstrap, Announce & Lookup' (Protocol in workflow.md) [17c2888]
 
-## Phase 4: IPC Integration & Swarm Re-hydration
+## Phase 4: IPC Integration & Swarm Re-hydration [checkpoint: dbb1719]
 
 - [x] Task: Wire `DHTNode` into IPC `join_swarm` / `leave_swarm` handlers (TDD) [ccc8de0]
     - [x] Write integration test: IPC client sends `join_swarm`; verify `DHTNode.Announce` and `DHTNode.Lookup` are called and discovered peers are registered in `SwarmRegistry`
@@ -62,4 +62,4 @@
     - [x] Update `DHTNode.Start`: after bootstrap, call `swarmRepo.GetActiveSwarms(ctx)`, for each topic call `Announce` + `Lookup`
     - [x] Thread `swarmRepo *db.SwarmRepository` through to `DHTNode` (or accept it as a `Start` parameter)
     - [x] Verify re-hydration integration tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: IPC Integration & Swarm Re-hydration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: IPC Integration & Swarm Re-hydration' (Protocol in workflow.md) [dbb1719]
