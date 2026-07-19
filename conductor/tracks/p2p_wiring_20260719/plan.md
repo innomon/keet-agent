@@ -12,13 +12,13 @@
     - [x] Verify listener tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Node Identity & P2P Listener Lifecycle' (Protocol in workflow.md)
 
-## Phase 2: DHT Peer Discovery Auto-Dialing
+## Phase 2: DHT Peer Discovery Auto-Dialing [checkpoint: 743cac4]
 
 - [x] Task: DHT Peer Swarm Integration (TDD) (2ad3d5e)
     - [x] Write integration test verifying that when DHT registers a new peer, the gateway automatically dials the peer
     - [x] Wire DHT swarm registry additions to invoke `pm.DialPeer` in `cmd/gateway/main.go`
     - [x] Verify auto-dialing integration tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: DHT Peer Discovery Auto-Dialing' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: DHT Peer Discovery Auto-Dialing' (Protocol in workflow.md)
 
 ## Phase 3: P2P Socket Event Notification Integration
 
