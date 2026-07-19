@@ -31,3 +31,8 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 - [x] **Track: Implement peer-to-peer chat message exchange over secure connections**
   *Link: [./tracks/chat_sync_20260719/](./tracks/chat_sync_20260719/)*
+
+---
+
+- [ ] **Track: Implement production P2P gateway wiring**
+  *Link: [./tracks/p2p_wiring_20260719/](./tracks/p2p_wiring_20260719/)*
