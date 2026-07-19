@@ -4,10 +4,10 @@ This plan details the steps to implement the Noise handshake transport layer, co
 
 ## Phase 1: Noise Handshake Transport Layer
 
-- [ ] Task: Noise XX Handshake Execution (TDD)
-    - [ ] Write unit tests for Noise handshake exchange over in-memory pipes
-    - [ ] Implement initiator and responder XX handshake protocol wrappers in `pkg/crypto/noise.go`
-    - [ ] Verify Noise handshake tests pass
+- [x] Task: Noise XX Handshake Execution (TDD) (beacfb1)
+    - [x] Write unit tests for Noise handshake exchange over in-memory pipes
+    - [x] Implement initiator and responder XX handshake protocol wrappers in `pkg/crypto/noise.go`
+    - [x] Verify Noise handshake tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Noise Handshake Transport Layer' (Protocol in workflow.md)
 
 ## Phase 2: Concurrent Replication Session Loop
