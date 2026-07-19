@@ -8,6 +8,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/innomon/keet-adk-gateway/pkg/crypto"
 	"github.com/innomon/keet-adk-gateway/pkg/db"
@@ -28,6 +29,8 @@ type PeerManager struct {
 	wg            sync.WaitGroup
 	cancel        context.CancelFunc
 	OnAppendBlock func(index uint64, value []byte)
+	relayServer   string
+	stunServer    string
 }
 
 // NewPeerManager instantiates a new PeerManager with the given credentials.
@@ -42,6 +45,18 @@ func NewPeerManager(localPriv ed25519.PrivateKey, storage *hypercore.Storage, bl
 	}
 }
 
+func (pm *PeerManager) SetRelayServer(addr string) {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+	pm.relayServer = addr
+}
+
+func (pm *PeerManager) SetStunServer(addr string) {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+	pm.stunServer = addr
+}
+
 // StartListener starts the UDP socket, running a SocketMux and UTPListener to accept incoming connections.
 func (pm *PeerManager) StartListener(ctx context.Context, addr string) error {
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
@@ -54,6 +69,9 @@ func (pm *PeerManager) StartListener(ctx context.Context, addr string) error {
 	}
 
 	mux := utp.NewSocketMux(packetConn)
+	if pm.relayServer != "" {
+		mux.SetRelayServer(pm.relayServer)
+	}
 	mux.Start()
 
 	l := utp.NewUTPListener(mux)
@@ -109,9 +127,12 @@ func (pm *PeerManager) DialPeer(ctx context.Context, addr string) error {
 	}
 
 	mux := utp.NewSocketMux(localConn)
+	if pm.relayServer != "" {
+		mux.SetRelayServer(pm.relayServer)
+	}
 	mux.Start()
 
-	conn, err := utp.DialUTP(mux, udpAddr)
+	conn, err := utp.DialUTPWithTimeoutAndRelay(mux, udpAddr, 1*time.Second)
 	if err != nil {
 		mux.Stop()
 		return err
