@@ -64,17 +64,35 @@ func TestP2PWiring_NodeIdentityAndListener(t *testing.T) {
 }
 
 func TestP2PWiring_DHTDiscoveryAutoDialing(t *testing.T) {
-	_, privA, _ := ed25519.GenerateKey(rand.Reader)
-	_, privB, _ := ed25519.GenerateKey(rand.Reader)
+	_, privA, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("keygen A: %v", err)
+	}
+	_, privB, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("keygen B: %v", err)
+	}
 
-	tempDirA, _ := os.MkdirTemp("", "wiring-dht-a-*")
+	tempDirA, err := os.MkdirTemp("", "wiring-dht-a-*")
+	if err != nil {
+		t.Fatalf("temp dir A: %v", err)
+	}
 	defer os.RemoveAll(tempDirA)
-	tempDirB, _ := os.MkdirTemp("", "wiring-dht-b-*")
+	tempDirB, err := os.MkdirTemp("", "wiring-dht-b-*")
+	if err != nil {
+		t.Fatalf("temp dir B: %v", err)
+	}
 	defer os.RemoveAll(tempDirB)
 
-	storageA, _ := hypercore.NewStorage(tempDirA)
+	storageA, err := hypercore.NewStorage(tempDirA)
+	if err != nil {
+		t.Fatalf("storage A: %v", err)
+	}
 	defer storageA.Close()
-	storageB, _ := hypercore.NewStorage(tempDirB)
+	storageB, err := hypercore.NewStorage(tempDirB)
+	if err != nil {
+		t.Fatalf("storage B: %v", err)
+	}
 	defer storageB.Close()
 
 	feedKey := "wiring_dht_auto_dial_feed"
@@ -96,7 +114,7 @@ func TestP2PWiring_DHTDiscoveryAutoDialing(t *testing.T) {
 
 	// DHT registry setup on A
 	swarmRegistry := dht.NewSwarmRegistry()
-	
+
 	// Wire OnRegisterPeer callback to DialPeer!
 	swarmRegistry.OnRegisterPeer = func(topic [32]byte, peerAddr string) {
 		_ = pmA.DialPeer(ctx, peerAddr)
@@ -112,17 +130,14 @@ func TestP2PWiring_DHTDiscoveryAutoDialing(t *testing.T) {
 	copy(mockTopic[:], []byte("mock_topic_hash_bytes"))
 	swarmRegistry.RegisterPeer(mockTopic, bAddr)
 
-	// Assert: Verify connection is established automatically
+	// Assert: Verify connection is established automatically via ConnCount() helper
 	retries := 50
 	connected := false
 	for i := 0; i < retries; i++ {
-		pmA.mu.Lock()
-		if len(pmA.conns) > 0 {
+		if pmA.ConnCount() > 0 {
 			connected = true
-			pmA.mu.Unlock()
 			break
 		}
-		pmA.mu.Unlock()
 		time.Sleep(50 * time.Millisecond)
 	}
 
@@ -132,17 +147,35 @@ func TestP2PWiring_DHTDiscoveryAutoDialing(t *testing.T) {
 }
 
 func TestP2PWiring_End2EndReplicationSocketNotification(t *testing.T) {
-	_, privA, _ := ed25519.GenerateKey(rand.Reader)
-	_, privB, _ := ed25519.GenerateKey(rand.Reader)
+	_, privA, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("keygen A: %v", err)
+	}
+	_, privB, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("keygen B: %v", err)
+	}
 
-	tempDirA, _ := os.MkdirTemp("", "wiring-e2e-a-*")
+	tempDirA, err := os.MkdirTemp("", "wiring-e2e-a-*")
+	if err != nil {
+		t.Fatalf("temp dir A: %v", err)
+	}
 	defer os.RemoveAll(tempDirA)
-	tempDirB, _ := os.MkdirTemp("", "wiring-e2e-b-*")
+	tempDirB, err := os.MkdirTemp("", "wiring-e2e-b-*")
+	if err != nil {
+		t.Fatalf("temp dir B: %v", err)
+	}
 	defer os.RemoveAll(tempDirB)
 
-	storageA, _ := hypercore.NewStorage(tempDirA)
+	storageA, err := hypercore.NewStorage(tempDirA)
+	if err != nil {
+		t.Fatalf("storage A: %v", err)
+	}
 	defer storageA.Close()
-	storageB, _ := hypercore.NewStorage(tempDirB)
+	storageB, err := hypercore.NewStorage(tempDirB)
+	if err != nil {
+		t.Fatalf("storage B: %v", err)
+	}
 	defer storageB.Close()
 
 	feedKey := "wiring_e2e_sync_feed"

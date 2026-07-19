@@ -15,16 +15,16 @@ import (
 )
 
 type PeerManager struct {
-	localPriv ed25519.PrivateKey
-	storage   *hypercore.Storage
-	blockRepo *db.BlockRepository
-	feedKey   string
-	listener  net.Listener
-	mu        sync.Mutex
-	conns     map[string]net.Conn
-	sessions  map[string]*hypercore.SyncSession
-	wg        sync.WaitGroup
-	cancel    context.CancelFunc
+	localPriv     ed25519.PrivateKey
+	storage       *hypercore.Storage
+	blockRepo     *db.BlockRepository
+	feedKey       string
+	listener      net.Listener
+	mu            sync.Mutex
+	conns         map[string]net.Conn
+	sessions      map[string]*hypercore.SyncSession
+	wg            sync.WaitGroup
+	cancel        context.CancelFunc
 	OnAppendBlock func(index uint64, value []byte)
 }
 
@@ -173,6 +173,13 @@ func (pm *PeerManager) Addr() net.Addr {
 		return pm.listener.Addr()
 	}
 	return nil
+}
+
+// ConnCount returns the number of active peer connections. Used for testing.
+func (pm *PeerManager) ConnCount() int {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+	return len(pm.conns)
 }
 
 func (pm *PeerManager) Close() {

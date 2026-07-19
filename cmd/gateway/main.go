@@ -20,6 +20,9 @@ import (
 	"github.com/innomon/keet-adk-gateway/pkg/network"
 )
 
+// defaultFeedKey is the Hypercore feed identifier used by this node for P2P sync and IPC broadcast.
+const defaultFeedKey = "default_feed"
+
 func main() {
 	// Optimize execution profile for Apple Silicon M4 multicore distribution
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -97,8 +100,8 @@ func main() {
 	}
 
 	// Initialize PeerManager
-	pm := network.NewPeerManager(nodePrivKey, hypercoreStorage, blockRepo, "default_feed")
-	
+	pm := network.NewPeerManager(nodePrivKey, hypercoreStorage, blockRepo, defaultFeedKey)
+
 	// Start PeerManager TCP Listener
 	p2pAddr := fmt.Sprintf("%s:%s", cfg.P2PListenAddr, cfg.P2PPort)
 	if err := pm.StartListener(ctx, p2pAddr); err != nil {
@@ -121,7 +124,7 @@ func main() {
 	// Wire Replication to IPC notification broadcast
 	pm.OnAppendBlock = func(index uint64, value []byte) {
 		cl.Infof("Replicated block index %d received from peer. Broadcasting to ADK clients...", index)
-		ipc.BroadcastChatMessage("default_feed", index, value)
+		ipc.BroadcastChatMessage(defaultFeedKey, index, value)
 	}
 
 	cl.Infof("ADK Communication Socket Ready at path: %s", cfg.SocketPath)
