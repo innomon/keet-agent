@@ -22,23 +22,18 @@ type SecureConn struct {
 	readMu  sync.Mutex
 }
 
-func NewSecureConnection(conn net.Conn, localPriv ed25519.PrivateKey, remotePub ed25519.PublicKey, initiator bool) (net.Conn, error) {
+func NewSecureConnection(conn net.Conn, localPriv ed25519.PrivateKey, initiator bool) (net.Conn, ed25519.PublicKey, error) {
 	cipherSuite := noise.NewCipherSuite(noise.DH25519, noise.CipherChaChaPoly, noise.HashBLAKE2b)
 
 	localXPrivate := ed25519PrivateKeyToX25519(localPriv)
 	localXPublic, err := curve25519.X25519(localXPrivate, curve25519.Basepoint)
 	if err != nil {
-		return nil, err
-	}
-
-	remoteXPublic, err := ed25519PublicKeyToX25519(remotePub)
-	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	config := noise.Config{
 		CipherSuite: cipherSuite,
-		Pattern:     noise.HandshakeXK,
+		Pattern:     noise.HandshakeXX,
 		Initiator:   initiator,
 		StaticKeypair: noise.DHKey{
 			Private: localXPrivate,
@@ -46,76 +41,82 @@ func NewSecureConnection(conn net.Conn, localPriv ed25519.PrivateKey, remotePub 
 		},
 	}
 
-	if initiator {
-		config.PeerStatic = remoteXPublic
-	}
-
 	hs, err := noise.NewHandshakeState(config)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var csSend, csRecv *noise.CipherState
+	var remotePub ed25519.PublicKey
+	localPub := localPriv.Public().(ed25519.PublicKey)
 
 	if initiator {
-		// Msg 1: Write (-> e, es)
+		// Msg 1: Write (-> e)
 		msg, _, _, err := hs.WriteMessage(nil, nil)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if err := writeFrame(conn, msg); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
-		// Msg 2: Read (<- e, ee)
+		// Msg 2: Read (<- e, ee, s, es)
 		payload, err := readFrame(conn)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		_, _, _, err = hs.ReadMessage(nil, payload)
+		res, _, _, err := hs.ReadMessage(nil, payload)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+		if len(res) == ed25519.PublicKeySize {
+			remotePub = make([]byte, ed25519.PublicKeySize)
+			copy(remotePub, res)
 		}
 
 		// Msg 3: Write (-> s, se)
-		msg, cs1, cs2, err := hs.WriteMessage(nil, nil)
+		msg, cs1, cs2, err := hs.WriteMessage(nil, localPub)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if err := writeFrame(conn, msg); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		csSend = cs1
 		csRecv = cs2
 	} else {
-		// Msg 1: Read (-> e, es)
+		// Msg 1: Read (-> e)
 		payload, err := readFrame(conn)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		_, _, _, err = hs.ReadMessage(nil, payload)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
-		// Msg 2: Write (<- e, ee)
-		msg, _, _, err := hs.WriteMessage(nil, nil)
+		// Msg 2: Write (<- e, ee, s, es)
+		msg, _, _, err := hs.WriteMessage(nil, localPub)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if err := writeFrame(conn, msg); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		// Msg 3: Read (-> s, se)
 		payload, err = readFrame(conn)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		var cs1, cs2 *noise.CipherState
-		_, cs1, cs2, err = hs.ReadMessage(nil, payload)
+		res, cs1, cs2, err := hs.ReadMessage(nil, payload)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
+		}
+		if len(res) == ed25519.PublicKeySize {
+			remotePub = make([]byte, ed25519.PublicKeySize)
+			copy(remotePub, res)
 		}
 		csSend = cs2
 		csRecv = cs1
@@ -125,7 +126,7 @@ func NewSecureConnection(conn net.Conn, localPriv ed25519.PrivateKey, remotePub 
 		Conn:   conn,
 		csSend: csSend,
 		csRecv: csRecv,
-	}, nil
+	}, remotePub, nil
 }
 
 func (s *SecureConn) Write(p []byte) (int, error) {

@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
 	"net"
@@ -26,24 +27,27 @@ func TestNoiseHandshake(t *testing.T) {
 
 	errChan := make(chan error, 2)
 	var clientSecConn, serverSecConn net.Conn
+	var clientRemotePub, serverRemotePub ed25519.PublicKey
 
 	go func() {
-		secConn, err := NewSecureConnection(client, privInit, pubResp, true)
+		secConn, remotePub, err := NewSecureConnection(client, privInit, true)
 		if err != nil {
 			errChan <- err
 			return
 		}
 		clientSecConn = secConn
+		clientRemotePub = remotePub
 		errChan <- nil
 	}()
 
 	go func() {
-		secConn, err := NewSecureConnection(server, privResp, pubInit, false)
+		secConn, remotePub, err := NewSecureConnection(server, privResp, false)
 		if err != nil {
 			errChan <- err
 			return
 		}
 		serverSecConn = secConn
+		serverRemotePub = remotePub
 		errChan <- nil
 	}()
 
@@ -52,6 +56,14 @@ func TestNoiseHandshake(t *testing.T) {
 		if err := <-errChan; err != nil {
 			t.Fatalf("handshake failed: %v", err)
 		}
+	}
+
+	// Verify remote public key exchange
+	if !bytes.Equal(clientRemotePub, pubResp) {
+		t.Errorf("client expected remote public key %x, got %x", pubResp, clientRemotePub)
+	}
+	if !bytes.Equal(serverRemotePub, pubInit) {
+		t.Errorf("server expected remote public key %x, got %x", pubInit, serverRemotePub)
 	}
 
 	// Test read/write
