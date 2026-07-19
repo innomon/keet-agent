@@ -1,0 +1,8 @@
+{
+  "track_id": "nat_holepunch_protobuf_20260719",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-07-19T12:43:20Z",
+  "updated_at": "2026-07-19T12:43:20Z",
+  "description": "NAT Hole Punching (ICE/STUN/TURN), UDP Relay / TURN fallback, Relay server integration, Hypercore wire protobuf spec compliance"
+}

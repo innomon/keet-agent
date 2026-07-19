@@ -45,4 +45,9 @@ This file tracks all major tracks for the project. Each track has its own detail
 ---
 
 - [x] **Track: UTP/µTP reliable transport over UDP (Holepunch's actual production layer)**
-*Link: [./tracks/utp_transport_20260719/](./tracks/utp_transport_20260719/)*
+  *Link: [./tracks/utp_transport_20260719/](./tracks/utp_transport_20260719/)*
+
+---
+
+- [ ] **Track: NAT Hole Punching (ICE/STUN/TURN) , UDP Relay / TURN fallback, Relay server integration , Hypercore wire protobuf spec compliance**
+  *Link: [./tracks/nat_holepunch_protobuf_20260719/](./tracks/nat_holepunch_protobuf_20260719/)*
