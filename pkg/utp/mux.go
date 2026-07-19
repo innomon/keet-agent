@@ -2,6 +2,7 @@ package utp
 
 import (
 	"errors"
+	"math/rand"
 	"net"
 	"sync"
 )
@@ -10,6 +11,7 @@ import (
 type SocketMux struct {
 	conn      net.PacketConn
 	conns     map[uint16]chan *Packet
+	listener  *UTPListener
 	mu        sync.RWMutex
 	closeChan chan struct{}
 	wg        sync.WaitGroup
@@ -57,6 +59,20 @@ func (sm *SocketMux) DeregisterConn(connID uint16) {
 	delete(sm.conns, connID)
 }
 
+// RegisterListener registers a listener to handle inbound ST_SYN connection handshakes.
+func (sm *SocketMux) RegisterListener(l *UTPListener) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	sm.listener = l
+}
+
+// DeregisterListener removes the registered listener.
+func (sm *SocketMux) DeregisterListener() {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	sm.listener = nil
+}
+
 func (sm *SocketMux) readLoop() {
 	defer sm.wg.Done()
 	buf := make([]byte, 65535)
@@ -66,7 +82,7 @@ func (sm *SocketMux) readLoop() {
 		case <-sm.closeChan:
 			return
 		default:
-			n, _, err := sm.conn.ReadFrom(buf)
+			n, src, err := sm.conn.ReadFrom(buf)
 			if err != nil {
 				return // connection closed, terminate loop
 			}
@@ -78,6 +94,7 @@ func (sm *SocketMux) readLoop() {
 
 			sm.mu.RLock()
 			ch, exists := sm.conns[pkt.Header.ConnID]
+			listener := sm.listener
 			sm.mu.RUnlock()
 
 			if exists {
@@ -85,6 +102,41 @@ func (sm *SocketMux) readLoop() {
 				case ch <- pkt:
 				default:
 					// queue full, drop packet
+				}
+			} else if pkt.Header.Type == ST_SYN && listener != nil {
+				s := pkt.Header.ConnID
+				recvID := s
+				sendID := s + 1
+
+				c := &UTPConn{
+					state:      STATE_CONNECTED,
+					mux:        sm,
+					remoteAddr: src,
+					recvID:     recvID,
+					sendID:     sendID,
+					seq:        uint16(rand.Intn(65535)),
+					ack:        pkt.Header.SeqNum,
+					readBuf:    make(chan *Packet, 100),
+					closeChan:  make(chan struct{}),
+				}
+
+				if err := sm.RegisterConn(recvID, c.readBuf); err == nil {
+					// Send SYN-ACK (ST_STATE)
+					synAck := &Packet{
+						Header: Header{
+							Type:    ST_STATE,
+							Version: 1,
+							ConnID:  sendID,
+							AckNum:  pkt.Header.SeqNum,
+						},
+					}
+					data, _ := synAck.Encode()
+					_, _ = sm.conn.WriteTo(data, src)
+
+					select {
+					case listener.acceptChan <- c:
+					default:
+					}
 				}
 			}
 		}
