@@ -31,23 +31,23 @@
 
 ## Phase 3: Bootstrap, Announce & Lookup
 
-- [ ] Task: Implement `DHTNode.Start` bootstrap sequence (TDD)
-    - [ ] Write integration test using `InProcessTransport`: 2+ nodes, one acts as bootstrap; verify calling `Start` populates routing table with bootstrap node's contact
-    - [ ] Implement `DHTNode.Start(ctx)`: bind transport, PING each bootstrap node, issue `FIND_NODE(selfID)`, merge responses into routing table
-    - [ ] Verify bootstrap integration test passes
-- [ ] Task: Implement `DHTNode.Announce` iterative announce (TDD)
-    - [ ] Write integration test: 3-node in-process DHT; node A announces topic, nodes B and C perform `LOOKUP` and find A's address
-    - [ ] Implement `DHTNode.Announce(ctx, topic [32]byte)`: iterative `FIND_NODE` for topic, send `ANNOUNCE` to K-closest
-    - [ ] Implement periodic re-announce goroutine (default 10-minute interval, configurable via config)
-    - [ ] Verify announce integration test passes
-- [ ] Task: Implement `DHTNode.Lookup` iterative lookup (TDD)
-    - [ ] Write integration test: 3-node in-process DHT; node A announces, node B calls `Lookup`, receives A's peer address
-    - [ ] Implement `DHTNode.Lookup(ctx, topic [32]byte) ([]string, error)`: iterative `FIND_NODE` + `LOOKUP` RPCs, collect + deduplicate peer addresses
-    - [ ] Verify lookup integration test passes
-- [ ] Task: Implement `DHTNode.Leave` graceful unannounce (TDD)
-    - [ ] Write test: node A announces, then calls `Leave`; subsequent `Lookup` from node B does not return A's address
-    - [ ] Implement `DHTNode.Leave(ctx, topic [32]byte)`: remove from local announce set, cancel periodic re-announce
-    - [ ] Verify leave test passes
+- [x] Task: Implement `DHTNode.Start` bootstrap sequence (TDD) [9e30c49]
+    - [x] Write integration test using `InProcessTransport`: 2+ nodes, one acts as bootstrap; verify calling `Start` populates routing table with bootstrap node's contact
+    - [x] Implement `DHTNode.Start(ctx)`: bind transport, PING each bootstrap node, issue `FIND_NODE(selfID)`, merge responses into routing table
+    - [x] Verify bootstrap integration test passes
+- [x] Task: Implement `DHTNode.Announce` iterative announce (TDD) [9e30c49]
+    - [x] Write integration test: 3-node in-process DHT; node A announces topic, nodes B and C perform `LOOKUP` and find A's address
+    - [x] Implement `DHTNode.Announce(ctx, topic [32]byte)`: iterative `FIND_NODE` for topic, send `ANNOUNCE` to K-closest
+    - [x] Implement periodic re-announce goroutine (default 10-minute interval, configurable via config)
+    - [x] Verify announce integration test passes
+- [x] Task: Implement `DHTNode.Lookup` iterative lookup (TDD) [9e30c49]
+    - [x] Write integration test: 3-node in-process DHT; node A announces, node B calls `Lookup`, receives A's peer address
+    - [x] Implement `DHTNode.Lookup(ctx, topic [32]byte) ([]string, error)`: iterative `FIND_NODE` + `LOOKUP` RPCs, collect + deduplicate peer addresses
+    - [x] Verify lookup integration test passes
+- [x] Task: Implement `DHTNode.Leave` graceful unannounce (TDD) [9e30c49]
+    - [x] Write test: node A announces, then calls `Leave`; subsequent `Lookup` from node B does not return A's address
+    - [x] Implement `DHTNode.Leave(ctx, topic [32]byte)`: remove from local announce set, cancel periodic re-announce
+    - [x] Verify leave test passes
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Bootstrap, Announce & Lookup' (Protocol in workflow.md)
 
 ## Phase 4: IPC Integration & Swarm Re-hydration
