@@ -29,7 +29,7 @@
     - [x] Verify dispatcher tests pass
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Kademlia Core — Routing & Request/Response Engine' (Protocol in workflow.md) [25d087a]
 
-## Phase 3: Bootstrap, Announce & Lookup
+## Phase 3: Bootstrap, Announce & Lookup [checkpoint: 17c2888]
 
 - [x] Task: Implement `DHTNode.Start` bootstrap sequence (TDD) [9e30c49]
     - [x] Write integration test using `InProcessTransport`: 2+ nodes, one acts as bootstrap; verify calling `Start` populates routing table with bootstrap node's contact
@@ -48,7 +48,7 @@
     - [x] Write test: node A announces, then calls `Leave`; subsequent `Lookup` from node B does not return A's address
     - [x] Implement `DHTNode.Leave(ctx, topic [32]byte)`: remove from local announce set, cancel periodic re-announce
     - [x] Verify leave test passes
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Bootstrap, Announce & Lookup' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Bootstrap, Announce & Lookup' (Protocol in workflow.md) [17c2888]
 
 ## Phase 4: IPC Integration & Swarm Re-hydration
 
