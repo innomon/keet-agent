@@ -2,13 +2,13 @@
 
 This plan details the steps to implement the Noise handshake transport layer, concurrent replication loop, and TCP connection listener.
 
-## Phase 1: Noise Handshake Transport Layer
+## Phase 1: Noise Handshake Transport Layer [checkpoint: 9ae91f3]
 
 - [x] Task: Noise XX Handshake Execution (TDD) (beacfb1)
     - [x] Write unit tests for Noise handshake exchange over in-memory pipes
     - [x] Implement initiator and responder XX handshake protocol wrappers in `pkg/crypto/noise.go`
     - [x] Verify Noise handshake tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Noise Handshake Transport Layer' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Noise Handshake Transport Layer' (Protocol in workflow.md)
 
 ## Phase 2: Concurrent Replication Session Loop
 
