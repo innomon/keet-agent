@@ -21,8 +21,8 @@ This plan details the steps to implement the Noise handshake transport layer, co
 
 ## Phase 3: TCP Connection Transport Listener & Integration
 
-- [ ] Task: TCP Socket Transport (TDD)
-    - [ ] Write unit tests for dialing/listening TCP connections with Noise encryption
-    - [ ] Implement TCP connection manager listener loops in `pkg/network/tcp.go`
-    - [ ] Verify TCP socket transport tests pass
+- [x] Task: TCP Socket Transport (TDD) (b876062)
+    - [x] Write unit tests for dialing/listening TCP connections with Noise encryption
+    - [x] Implement TCP connection manager listener loops in `pkg/network/tcp.go`
+    - [x] Verify TCP socket transport tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: TCP Connection Transport Listener & Integration' (Protocol in workflow.md)
