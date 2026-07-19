@@ -38,7 +38,7 @@ func LoadConfig() Config {
 		LogMaxBackups:  getEnvInt("LOG_MAX_BACKUPS", 5),
 		SocketPath:     getEnv("SOCKET_PATH", "/tmp/keet-adk.sock"),
 		StorageDir:     getEnv("STORAGE_DIR", "storage"),
-		DBType:         getEnv("DB_TYPE", "postgres"),
+		DBType:         getEnv("DB_TYPE", "bbolt"),
 		BBoltPath:      getEnv("BBOLT_PATH", "storage/gateway.db"),
 		DBHost:         getEnv("DB_HOST", "localhost"),
 		DBPort:         getEnv("DB_PORT", "5432"),
