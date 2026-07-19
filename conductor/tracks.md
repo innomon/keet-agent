@@ -24,5 +24,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-- [ ] **Track: Implement P2P log synchronization and replication using Hypercore protocol over Noise secure connections**
+- [~] **Track: Implement P2P log synchronization and replication using Hypercore protocol over Noise secure connections**
   *Link: [./tracks/p2p_sync_20260718/](./tracks/p2p_sync_20260718/)*
