@@ -64,6 +64,7 @@ You can customize the gateway's behavior by placing a `config.yaml` next to your
 To help you get the most out of the Keet ADK Gateway, check out the specialized guides in our `docs/` directory:
 
 * 🏗️ **[System Architecture Guide](docs/ARCHITECTURE.md)** — Core service topology, packet routing, and database layout.
+* 🐻 **[Bare Go Stack & Architecture Comparison](docs/bare-go.md)** — Comparative analysis of `bareclaw`, `bare-rpc-golang`, and the Keet ADK Gateway architecture.
 * 💾 **[Database Design & Interfaces](docs/embedded-db.md)** — Structural details regarding BoltDB binary serialization and repository abstractions.
 * 📶 **[Production Raspberry Pi 5 Guide](docs/production_setup_guide.md)** — Step-by-step tutorial on local Wi-Fi mobile routing, Whitelist setup, and local LLM orchestration with **Ollama** and **IBM Granite**.
 
