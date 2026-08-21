@@ -1,0 +1,45 @@
+# Keet ADK Gateway - Example Configuration File
+
+# Log Level: DEBUG, INFO, WARN, ERROR
+log_level: "INFO"
+
+# Logging Outputs
+console_log_enabled: true
+file_log_enabled: true
+log_dir: "logs"
+log_file_name: "gateway.log"
+log_max_size_mb: 10
+log_max_backups: 5
+
+# ADK IPC Socket Binding:
+# - Unix Domain Socket: "/tmp/keet-adk.sock"
+# - TCP Socket (for network/Wi-Fi access): "0.0.0.0:12345" or "tcp://0.0.0.0:12345"
+socket_path: "/tmp/keet-adk.sock"
+
+# Storage directory for Hypercore feeds & cryptographic identity keys
+storage_dir: "storage"
+
+# Backend Persistence Driver: "bbolt" (pure-Go embedded) or "postgres"
+db_type: "bbolt"
+
+# BoltDB configuration (used when db_type is "bbolt")
+bbolt_path: "storage/gateway.db"
+
+# PostgreSQL configuration (used when db_type is "postgres")
+db_host: "localhost"
+db_port: "5432"
+db_user: "postgres"
+db_password: "postgres"
+db_name: "keet_gateway"
+db_sslmode: "disable"
+
+# P2P DHT Swarm Listener
+p2p_listen_addr: "127.0.0.1"
+p2p_port: "0"  # 0 binds to a random available port
+
+# Client Access Whitelist (list of client public keys in hex format)
+# Leave empty to allow any client connection
+client_whitelist: []
+
+# Optional Agentic HTTP Service endpoint for automated block handling
+agentic_url: ""
